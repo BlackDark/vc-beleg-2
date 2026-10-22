@@ -4,7 +4,7 @@ Self-hosted app for one managing shareholder: records meal receipts, computes th
 
 ## Verify
 
-`mise run check` green before every commit.
+`mise run check` green before every commit; `mise run e2e` (Playwright, `web/e2e`) after UI changes.
 
 ## Stack
 
@@ -26,7 +26,7 @@ Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API cli
 ## Every change
 
 Same PR, only what the change touches:
-- tests for the changed behaviour (Go table tests for rules, `internal/app` flow tests with real SQLite and Typst, `internal/api` tests for auth)
+- tests for the changed behaviour (Go table tests for rules, `internal/app` flow tests with real SQLite and Typst, `internal/api` tests for auth, Playwright in `web/e2e` for user flows)
 - `docs/CALCULATION_RULES.md` when amounts change, `docs/BRIEF.md` when scope changes, `GLOSSARY.md` for new terms
 - README when a user-visible feature changes, `docs/OPERATIONS.md` when configuration changes
 - after API changes: `mise run gen`, commit `web/openapi.json` and `web/src/api/gen`
