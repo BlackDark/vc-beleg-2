@@ -19,6 +19,8 @@ Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API cli
 - `internal/holidays`: public holidays per Bundesland.
 - `internal/app`: persistence, receipts, months and reports (one account, one employee); `internal/api`: Huma operations, the OpenAPI document is generated from them; `internal/export`: Typst report template.
 - `internal/extract`: Claude reads receipts; `internal/mailimport`: IMAP polling. Both only suggest values: every receipt is checked by the user.
+- `web/`: React SPA, embedded in the binary; `web/src/api/gen` is generated (`mise run gen`), never edit it. UI text in `web/messages/de.json`.
+- `docker/Dockerfile`, `.github/workflows/release.yml` (tag `v*` → GHCR image + release), `deploy/kubernetes.yaml`, [docs/OPERATIONS.md](docs/OPERATIONS.md) (all env variables).
 - Much of the server and UI is adapted from Spesen (github.com/BlackDark/vc-geschaeftsausgabentest); check there before inventing a pattern.
 
 ## Every change
@@ -26,7 +28,8 @@ Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API cli
 Same PR, only what the change touches:
 - tests for the changed behaviour (Go table tests for rules, `internal/app` flow tests with real SQLite and Typst, `internal/api` tests for auth)
 - `docs/CALCULATION_RULES.md` when amounts change, `docs/BRIEF.md` when scope changes, `GLOSSARY.md` for new terms
-- README when a user-visible feature changes
+- README when a user-visible feature changes, `docs/OPERATIONS.md` when configuration changes
+- after API changes: `mise run gen`, commit `web/openapi.json` and `web/src/api/gen`
 
 ## Code style
 

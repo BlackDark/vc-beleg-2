@@ -10,8 +10,6 @@ Snap or mail your lunch receipts, let it pick the days that count, and archive a
 
 </div>
 
-> Work in progress. Phase 1 scope: [docs/BRIEF.md](docs/BRIEF.md).
-
 ## Why
 
 The rules are simple until they aren't: one allowance per working day, at most €7.67 in 2026, at most 15 days without proof, €4.57 of it taxable, the receipt caps the amount. Mahlzeit applies them to your receipts and documents every month.
@@ -19,6 +17,16 @@ The rules are simple until they aren't: one allowance per working day, at most �
 - **Correct amounts**: 2026 benefit values, tax models A (company pays 25 % flat tax), B (payroll) and C (tax-free top-up only), rule IDs on every day.
 - **Receipts in, no typing**: photo or PDF upload, or mail them to a dedicated mailbox; Claude reads date, total and merchant, you confirm.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.
+
+## Install
+
+One container with one volume, images for amd64 and arm64 on GHCR:
+
+```text
+ghcr.io/blackdark/vc-beleg-2:<version>
+```
+
+Kubernetes example: [deploy/kubernetes.yaml](deploy/kubernetes.yaml). Configuration, Pocket ID, mail import, backup: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Documentation
 
