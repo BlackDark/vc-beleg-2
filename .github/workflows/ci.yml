@@ -33,3 +33,39 @@ jobs:
           go run ./cmd/mahlzeit openapi > web/openapi.json
           pnpm --dir web gen:api
           git diff --exit-code -- web/openapi.json web/src/api/gen
+
+  docker:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build both platforms
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Load amd64 image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: mahlzeit:ci
+          cache-from: type=gha
+      - name: Start nonroot with read-only root filesystem
+        run: |
+          docker run -d --name mahlzeit --read-only --tmpfs /tmp -v mahlzeit-data:/data -p 8080:8080 \
+            -e MAHLZEIT_SETUP_TOKEN=ci mahlzeit:ci
+          for i in $(seq 1 30); do curl -fsS http://localhost:8080/healthz && break; sleep 1; done
+          curl -fsS http://localhost:8080/api/session || { docker logs mahlzeit; exit 1; }
+          curl -fsS http://localhost:8080/manifest.webmanifest > /dev/null
+          docker exec mahlzeit /usr/local/bin/typst --version
+          test "$(docker inspect -f '{{.Config.User}}' mahlzeit)" = "nonroot:nonroot"
+      - if: failure()
+        run: docker logs mahlzeit || true

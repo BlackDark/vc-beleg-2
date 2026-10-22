@@ -1,0 +1,89 @@
+# Example for one Kubernetes namespace. Adjust host, storage class and secrets.
+# One replica only: SQLite and the files live on a ReadWriteOnce volume.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mahlzeit-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mahlzeit
+type: Opaque
+stringData:
+  MAHLZEIT_SETUP_TOKEN: "change-me"
+  MAHLZEIT_OIDC_CLIENT_SECRET: "from-pocket-id"
+  ANTHROPIC_API_KEY: "sk-ant-..."
+  MAHLZEIT_IMAP_PASSWORD: "mailbox-password"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mahlzeit
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # never two pods on the same SQLite file
+  selector:
+    matchLabels: { app: mahlzeit }
+  template:
+    metadata:
+      labels: { app: mahlzeit }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: mahlzeit
+          image: ghcr.io/blackdark/vc-beleg-2:0.1 # pin a version; Renovate can bump it
+          ports:
+            - { name: http, containerPort: 8080 }
+          env:
+            - { name: MAHLZEIT_BASE_URL, value: "https://mahlzeit.example.com" }
+            - { name: MAHLZEIT_OIDC_ISSUER, value: "https://id.example.com" }
+            - { name: MAHLZEIT_OIDC_CLIENT_ID, value: "mahlzeit" }
+            - { name: MAHLZEIT_OIDC_ALLOWED_EMAILS, value: "me@example.com" }
+            - { name: MAHLZEIT_IMAP_HOST, value: "imap.example.com" }
+            - { name: MAHLZEIT_IMAP_USERNAME, value: "belege@example.com" }
+            - { name: MAHLZEIT_IMAP_ALLOWED_SENDERS, value: "me@example.com" }
+          envFrom:
+            - secretRef: { name: mahlzeit }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tmp, mountPath: /tmp }
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 512Mi } # Typst renders reports in /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: mahlzeit-data }
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mahlzeit
+spec:
+  selector: { app: mahlzeit }
+  ports:
+    - { name: http, port: 80, targetPort: http }
+# Ingress: route https://mahlzeit.example.com to service mahlzeit:80 with your
+# controller; allow request bodies of at least 26 MB for uploads.
