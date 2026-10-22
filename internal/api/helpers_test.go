@@ -108,4 +108,3 @@ func (c *client) do(method, path string, in, out any) int {
 	}
 	return resp.StatusCode
 }
-

@@ -20,13 +20,13 @@ import (
 
 // OIDCConfig configures login via an OpenID Connect provider such as Pocket ID.
 type OIDCConfig struct {
-	Issuer        string
-	ClientID      string
-	ClientSecret  string
-	Label         string
-	Scopes        []string
-	GroupsClaim   string
-	Policy        app.OIDCPolicy
+	Issuer       string
+	ClientID     string
+	ClientSecret string
+	Label        string
+	Scopes       []string
+	GroupsClaim  string
+	Policy       app.OIDCPolicy
 }
 
 // oidcProvider performs discovery lazily so the app starts even when the
