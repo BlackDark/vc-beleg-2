@@ -1,0 +1,123 @@
+// From the BlackDark/agent-presets template, adapted to this repo (Go, pnpm workspace in web/,
+// Docker, GitHub Actions, mise; no Rust).
+// Repo settings: enable "Allow auto-merge" and require the CI status checks on main,
+// otherwise platform automerge lands PRs before CI ran.
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:best-practices", // recommended + digest pins for Docker images and GitHub Actions
+    "security:minimumReleaseAgeNpm", // npm releases wait 3 days (unpublish window, hijacked releases)
+    "customManagers:githubActionsVersions", // `# renovate: datasource=… depName=…` comments in workflows
+    ":pinVersions", // exact versions in package.json; this is an app, not a library
+    ":prConcurrentLimitNone",
+    ":prHourlyLimitNone",
+  ],
+  labels: ["dependencies"],
+  semanticCommits: "enabled",
+  timezone: "Europe/Berlin",
+
+  // Weekly: branches are created/updated Monday early morning only.
+  schedule: ["before 4am on monday"],
+
+  // With a schedule, Renovate's own automerge only runs inside the window too, so a PR that turns
+  // green later would wait a week. Platform automerge (GitHub native) merges it as soon as CI passes.
+  updateNotScheduled: false,
+  platformAutomerge: true,
+
+  separateMajorMinor: true,
+  separateMultipleMajor: true,
+
+  // Go: keep go.sum tidy; rewrite import paths on /vN majors.
+  postUpdateOptions: ["gomodTidy", "gomodUpdateImportPaths"],
+
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+  },
+
+  // Later rules override earlier ones: general first, specific after.
+  packageRules: [
+    {
+      description: "Group and automerge patch, pin and digest updates",
+      matchUpdateTypes: ["patch", "pin", "pinDigest", "digest"],
+      groupName: "all patch/pin/digest updates",
+      groupSlug: "all-patch-pin-digest",
+      automerge: true,
+    },
+    {
+      description: "Group and automerge minor updates",
+      matchUpdateTypes: ["minor"],
+      groupName: "all minor updates",
+      groupSlug: "all-minor",
+      automerge: true,
+    },
+    {
+      description: "0.x: minor may break, review by hand",
+      matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "/^v?0\\./",
+      groupName: null,
+      automerge: false,
+    },
+    {
+      // mise, go.mod and golang images are separate managers; ungrouped, one bump lands alone
+      // and the versions drift apart.
+      description: "Go toolchain (mise + go.mod + golang images) in one PR",
+      matchManagers: ["mise", "gomod", "dockerfile"],
+      matchPackageNames: ["go", "golang", "docker.io/library/golang"],
+      groupName: "go toolchain",
+      groupSlug: "go-toolchain",
+      automerge: true,
+    },
+    {
+      description: "Node runtime (mise + node images) in one PR",
+      matchManagers: ["mise", "dockerfile"],
+      matchPackageNames: ["node", "docker.io/library/node"],
+      matchUpdateTypes: ["minor", "patch", "digest", "pinDigest"],
+      groupName: "node runtime",
+      groupSlug: "node-runtime",
+      automerge: true,
+    },
+    {
+      // mise.toml and packageManager in web/package.json must name the same pnpm.
+      description: "pnpm (mise + packageManager) in one PR",
+      matchPackageNames: ["pnpm"],
+      groupName: "pnpm",
+      groupSlug: "pnpm",
+    },
+    {
+      // The Dockerfile pins the Typst tarball by sha256; a version bump needs new checksums by
+      // hand, and the docker CI job fails until they are in.
+      description: "Typst (mise + Dockerfile) in one PR, merged by hand",
+      matchPackageNames: ["typst", "typst/typst"],
+      groupName: "typst",
+      groupSlug: "typst",
+      automerge: false,
+    },
+    {
+      description: "Majors: one PR each, merged by hand",
+      matchUpdateTypes: ["major"],
+      addLabels: ["major"],
+      automerge: false,
+    },
+    {
+      // Hey API needs the TypeScript compiler API, which TypeScript 7.0 does not have (see
+      // docs/BRIEF.md, deferred: TypeScript 7.1). Drop the rule once Hey API runs on TypeScript 7; the app itself uses 7.
+      description: "Hold the codegen package's TypeScript below 7",
+      matchFileNames: ["web/tools/codegen/package.json"],
+      matchPackageNames: ["typescript"],
+      allowedVersions: "<7",
+    },
+  ],
+
+  customManagers: [
+    {
+      customType: "regex",
+      description: "Typst CLI version in the Dockerfile",
+      managerFilePatterns: ["/(^|/)Dockerfile$/"],
+      matchStrings: ["ARG TYPST_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      depNameTemplate: "typst/typst",
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v(?<version>.*)$",
+    },
+  ],
+}
