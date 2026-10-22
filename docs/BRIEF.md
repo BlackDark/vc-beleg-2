@@ -17,7 +17,10 @@ One employee (the managing shareholder), lunch from the supermarket on most work
 - Warnings, never blocks: weekend, public holiday (Bundesland of the company), several receipts on one day, receipt dated in a closed month (counts only after reopening).
 - Month lifecycle `offen` → `abgeschlossen` → `ausgezahlt`; reopening needs a reason and creates report v2, v1 stays byte-identical.
 - Monthly report PDF (Typst, layout borrowed from Spesen): summary with totals per tax part and who pays the tax, day table, every counted receipt appended.
-- German UI (Paraglide ready for English), PWA, light/dark, usable from 360 px.
+- Screens: Start (current month progress, payout so far, receipts to check, capture button), Belege (filter defaults: current month, all statuses), Monat (day table, close/reopen/paid), Berichte (all report versions), Einstellungen (company, employee, tax model, mail import status, rate table read-only). Bottom navigation on phone, sidebar on desktop.
+- Capture: camera, or picking an existing photo or PDF (iOS file picker). Check screen: receipt next to the extracted fields (stacked on phone), low-confidence fields highlighted, confirm jumps to the next receipt.
+- Originals stay unchanged as evidence; previews and report images are re-rendered without EXIF.
+- German UI (Paraglide ready for English), PWA, dark by default (light and system selectable, PDF light), usable from 360 px.
 - Delivery: one OCI image (amd64/arm64, GHCR `ghcr.io/blackdark/vc-beleg-2`), Kubernetes single replica, SQLite and receipts on one PVC. Receipts are never deleted (6-year retention for payroll records). `mahlzeit backup DIR` CLI and documented restore.
 
 ## Deferred (recorded, not decided)
@@ -26,4 +29,6 @@ One employee (the managing shareholder), lunch from the supermarket on most work
 - **Backup to S3**: options are cluster volume backups (Longhorn/Velero/k8up), Litestream sidecar, or a built-in scheduled upload of DB snapshot + new files + reports, optionally encrypted. Owner decides later.
 - **Automatic reports**: generate at month start, deliver by mail or S3.
 - **Other meals**: breakfast or dinner instead of lunch (values already stored), see ADR 0002.
+- **Notifications** (low priority): mail-import failures, "month ready to close".
+- **Share target** (Android only; the owner uses iOS).
 - **Further employees or companies**: the data model allows them; the UI does not.
