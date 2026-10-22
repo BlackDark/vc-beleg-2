@@ -4,9 +4,9 @@ State of research 2026-10-22. Secondary sources only where marked; confirm with 
 
 ## Values
 
-| Year | Breakfast | Lunch / dinner | Tax-free top-up | Max per day (lunch) | Source |
+| Year | Breakfast | Lunch / dinner | Tax-free top-up | Max per day (lunch / breakfast) | Source |
 |---|---|---|---|---|---|
-| 2026 | €2.37 | €4.57 | €3.10 | €7.67 | 16. SvEV-Änderungsverordnung, BGBl. 29.12.2025 (€71 / €137 per month) |
+| 2026 | €2.37 | €4.57 | €3.10 | €7.67 / €5.47 | 16. SvEV-Änderungsverordnung, BGBl. 29.12.2025 (€71 / €137 per month) |
 
 Later years are added as rows; a missing year blocks the calculation of that year.
 
@@ -14,14 +14,16 @@ Later years are added as rows; a missing year blocks the calculation of that yea
 
 | ID | Rule | Basis |
 |---|---|---|
-| R1 | One allowance per working day, for one meal. | R 8.1 Abs. 7 Nr. 4 LStR; BMF 18.01.2019 |
-| R2 | Allowance ≤ receipt total and ≤ benefit value + €3.10. | BMF 18.01.2019 |
+| R1 | One allowance per working day, for one meal: lunch by default, breakfast or dinner when chosen for the day. | R 8.1 Abs. 7 Nr. 4 LStR; BMF 18.01.2019 |
+| R2 | Allowance ≤ receipt total and ≤ benefit value of the meal + €3.10 (2026 breakfast: €5.47). | BMF 18.01.2019 |
 | R3 | Food bought for eating right away or during the break counts (supermarket purchases included); extra items on a receipt do not harm when the meal part is identifiable. | BMF 18.01.2019; BayLfSt 13.05.2026 (secondary) |
 | R4 | At most 15 allowances per month need no proof of working days; above 15 every day must be a provable working day. | R 8.1 Abs. 7 Nr. 4 LStR (secondary sources) |
 | R5 | Homeoffice days and part-time days under 6 h qualify; a meal right after work counts. | BayLfSt 13.05.2026 (secondary) |
 | R6 | Model A: allowance ≤ receipt total and ≤ benefit value + top-up; taxable part = min(allowance, benefit value), the rest tax-free. The company pays 25 % flat tax on the month's taxable sum, Soli 5.5 % and church tax on that tax (fractions of a cent dropped); no social security. | § 40 Abs. 2 Satz 1 Nr. 1 EStG; § 4 SolZG |
 | R7 | Model B: parts as in R6, the taxable part taxed individually through payroll. | § 8 Abs. 2 EStG |
 | R8 | Model C: allowance ≤ min(receipt total, top-up); the employee's own share (receipt − allowance) reduces the benefit value; taxable = min(allowance, benefit value − own share), taxed through payroll. Receipt ≥ benefit value + allowance → nothing taxable. | R 8.1 Abs. 7 Nr. 4 LStR |
+
+"Benefit value" in R2 and R6–R8 is the value of the meal chosen for the day.
 
 Days: the receipts of one date form one meal day (highest receipt, or all of them when combined); above the day limit the days with the highest totals count, ties to the earlier date.
 

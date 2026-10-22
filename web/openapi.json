@@ -45,6 +45,14 @@
             },
             "type": "array"
           },
+          "meal": {
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner"
+            ],
+            "type": "string"
+          },
           "receiptIds": {
             "description": "receipts making up the day's total",
             "items": {
@@ -84,6 +92,7 @@
           "receiptIds",
           "ignored",
           "combined",
+          "meal",
           "total",
           "counted",
           "allowance",
@@ -218,6 +227,28 @@
           "lastRun",
           "lastError",
           "imported"
+        ],
+        "type": "object"
+      },
+      "MealBody": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "meal": {
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "meal"
         ],
         "type": "object"
       },
@@ -925,6 +956,52 @@
           }
         ],
         "summary": "Combine the receipts of a date into one meal, or undo it",
+        "tags": [
+          "months"
+        ]
+      }
+    },
+    "/api/days/meal": {
+      "post": {
+        "operationId": "setDayMeal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MealBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Month"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Set the meal a date's allowance is for",
         "tags": [
           "months"
         ]

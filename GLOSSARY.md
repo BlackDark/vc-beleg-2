@@ -31,7 +31,7 @@ Receipts taken from attachments of mails sent to the dedicated mailbox by an all
 ### Calculation
 
 **Meal** (Mahlzeit):
-Breakfast, lunch or dinner. The allowance is granted for one meal per working day; lunch is the default.
+Breakfast, lunch or dinner. The allowance is granted for one meal per working day; lunch is the default, and the employee can choose another meal per meal day. Breakfast has the lower benefit value.
 
 **Working day** (Arbeitstag):
 A day the employee worked, including Homeoffice. Within the 15-day simplification it is not proven individually.

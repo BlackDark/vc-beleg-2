@@ -19,6 +19,7 @@ export type Day = {
      * further receipts of the day that do not count
      */
     ignored: Array<number>;
+    meal: 'breakfast' | 'lunch' | 'dinner';
     /**
      * receipts making up the day's total
      */
@@ -86,6 +87,11 @@ export type MailStatus = {
      * user@host/folder
      */
     mailbox: string;
+};
+
+export type MealBody = {
+    date: string;
+    meal: 'breakfast' | 'lunch' | 'dinner';
 };
 
 export type Month = {
@@ -316,6 +322,31 @@ export type CombineDayResponses = {
 };
 
 export type CombineDayResponse = CombineDayResponses[keyof CombineDayResponses];
+
+export type SetDayMealData = {
+    body: MealBody;
+    path?: never;
+    query?: never;
+    url: '/api/days/meal';
+};
+
+export type SetDayMealErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type SetDayMealError = SetDayMealErrors[keyof SetDayMealErrors];
+
+export type SetDayMealResponses = {
+    /**
+     * OK
+     */
+    200: Month;
+};
+
+export type SetDayMealResponse = SetDayMealResponses[keyof SetDayMealResponses];
 
 export type LoginData = {
     body: LoginBody;

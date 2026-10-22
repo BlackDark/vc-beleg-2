@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { changePassword, checkReceipt, closeMonth, combineDay, deleteReceipt, getMailStatus, getMe, getMonth, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, setMonthPaid, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
-import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
+import { changePassword, checkReceipt, closeMonth, combineDay, deleteReceipt, getMailStatus, getMe, getMonth, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, setDayMeal, setMonthPaid, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
+import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SetDayMealData, SetDayMealError, SetDayMealResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
 
 /**
  * Combine the receipts of a date into one meal, or undo it
@@ -13,6 +13,23 @@ export const combineDayMutation = (options?: Partial<Options<CombineDayData>>): 
     const mutationOptions: UseMutationOptions<CombineDayResponse, CombineDayError, Options<CombineDayData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await combineDay({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set the meal a date's allowance is for
+ */
+export const setDayMealMutation = (options?: Partial<Options<SetDayMealData>>): UseMutationOptions<SetDayMealResponse, SetDayMealError, Options<SetDayMealData>> => {
+    const mutationOptions: UseMutationOptions<SetDayMealResponse, SetDayMealError, Options<SetDayMealData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setDayMeal({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
