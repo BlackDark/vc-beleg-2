@@ -19,9 +19,11 @@ Later years are added as rows; a missing year blocks the calculation of that yea
 | R3 | Food bought for eating right away or during the break counts (supermarket purchases included); extra items on a receipt do not harm when the meal part is identifiable. | BMF 18.01.2019; BayLfSt 13.05.2026 (secondary) |
 | R4 | At most 15 allowances per month need no proof of working days; above 15 every day must be a provable working day. | R 8.1 Abs. 7 Nr. 4 LStR (secondary sources) |
 | R5 | Homeoffice days and part-time days under 6 h qualify; a meal right after work counts. | BayLfSt 13.05.2026 (secondary) |
-| R6 | Model A: taxable part = min(allowance, benefit value) − employee contribution; company pays 25 % flat tax + Soli + church tax; no social security. | § 40 Abs. 2 Satz 1 Nr. 1 EStG |
-| R7 | Model B: taxable part as in R6, taxed individually through payroll. | § 8 Abs. 2 EStG |
-| R8 | Model C: allowance ≤ €3.10 and receipt ≥ benefit value + allowance → no taxable part. | R 8.1 Abs. 7 Nr. 4 LStR |
+| R6 | Model A: allowance ≤ receipt total and ≤ benefit value + top-up; taxable part = min(allowance, benefit value), the rest tax-free. The company pays 25 % flat tax on the month's taxable sum, Soli 5.5 % and church tax on that tax (fractions of a cent dropped); no social security. | § 40 Abs. 2 Satz 1 Nr. 1 EStG; § 4 SolZG |
+| R7 | Model B: parts as in R6, the taxable part taxed individually through payroll. | § 8 Abs. 2 EStG |
+| R8 | Model C: allowance ≤ min(receipt total, top-up); the employee's own share (receipt − allowance) reduces the benefit value; taxable = min(allowance, benefit value − own share), taxed through payroll. Receipt ≥ benefit value + allowance → nothing taxable. | R 8.1 Abs. 7 Nr. 4 LStR |
+
+Days: the receipts of one date form one meal day (highest receipt, or all of them when combined); above the day limit the days with the highest totals count, ties to the earlier date.
 
 ## Sources
 
@@ -36,4 +38,6 @@ Later years are added as rows; a missing year blocks the calculation of that yea
 
 - Full texts of BMF 18.01.2019 and BayLfSt 13.05.2026 (S 2334.1.1-43/10 St36); R4 rests on secondary sources.
 - Church-tax rate on the flat tax in Baden-Württemberg (simplified procedure); not needed while the owner proves non-membership.
+- R6/R7 are conservative: the employee's own payment above the allowance does not reduce the taxable part, because supermarket receipts may contain non-meal items. Whether it may (as in R8) is open.
+- Taxable part when the receipt is below the benefit value (R6 caps it at the allowance).
 - Whether several receipts of one day may be combined into one meal (R2); combining is offered with a warning until confirmed.
