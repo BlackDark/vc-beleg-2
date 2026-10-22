@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"encoding/csv"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -63,4 +64,14 @@ func parse(src string) (Table, error) {
 		t[year] = Values{Year: year, Breakfast: cents[0], Lunch: cents[1], Dinner: cents[2], TopUp: cents[3], Source: r[5]}
 	}
 	return t, nil
+}
+
+// Sorted returns the years newest first.
+func (t Table) Sorted() []Values {
+	out := make([]Values, 0, len(t))
+	for _, v := range t {
+		out = append(out, v)
+	}
+	slices.SortFunc(out, func(a, b Values) int { return b.Year - a.Year })
+	return out
 }

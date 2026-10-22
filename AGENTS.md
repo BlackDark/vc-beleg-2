@@ -17,12 +17,14 @@ Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API cli
 - `internal/calc`: the only place for tax rules; pure functions, day lines carry rule IDs.
 - `internal/rates/benefit-values.csv`: benefit values per year; a new year is a new row, never code.
 - `internal/holidays`: public holidays per Bundesland.
+- `internal/app`: persistence, receipts, months and reports (one account, one employee); `internal/api`: Huma operations, the OpenAPI document is generated from them; `internal/export`: Typst report template.
+- `internal/extract`: Claude reads receipts; `internal/mailimport`: IMAP polling. Both only suggest values: every receipt is checked by the user.
 - Much of the server and UI is adapted from Spesen (github.com/BlackDark/vc-geschaeftsausgabentest); check there before inventing a pattern.
 
 ## Every change
 
 Same PR, only what the change touches:
-- tests for the changed behaviour (Go table tests for rules)
+- tests for the changed behaviour (Go table tests for rules, `internal/app` flow tests with real SQLite and Typst, `internal/api` tests for auth)
 - `docs/CALCULATION_RULES.md` when amounts change, `docs/BRIEF.md` when scope changes, `GLOSSARY.md` for new terms
 - README when a user-visible feature changes
 
