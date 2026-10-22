@@ -1,0 +1,47 @@
+# Mahlzeit
+
+Self-hosted app for one managing shareholder: records meal receipts, computes the monthly meal allowance (Essenszuschuss) and archives each month as a PDF report.
+
+## Verify
+
+`mise run check` green before every commit.
+
+## Stack
+
+Follows https://github.com/BlackDark/agent-presets/blob/main/stack/core.md.
+Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API client instead of TanStack Start; Typst CLI for PDFs. Why: [docs/adr/0001](docs/adr/0001-stack-and-separate-app.md). Hey API runs with TypeScript 6 in `web/tools/codegen` until TypeScript 7.1.
+
+## Map
+
+- Read first: [GLOSSARY.md](GLOSSARY.md) (use its English terms in code), [docs/BRIEF.md](docs/BRIEF.md) (scope, deferred items), [docs/CALCULATION_RULES.md](docs/CALCULATION_RULES.md) (rule IDs R1–R8).
+- `internal/calc`: the only place for tax rules; pure functions, day lines carry rule IDs.
+- `internal/rates/benefit-values.csv`: benefit values per year; a new year is a new row, never code.
+- `internal/holidays`: public holidays per Bundesland.
+- Much of the server and UI is adapted from Spesen (github.com/BlackDark/vc-geschaeftsausgabentest); check there before inventing a pattern.
+
+## Every change
+
+Same PR, only what the change touches:
+- tests for the changed behaviour (Go table tests for rules)
+- `docs/CALCULATION_RULES.md` when amounts change, `docs/BRIEF.md` when scope changes, `GLOSSARY.md` for new terms
+- README when a user-visible feature changes
+
+## Code style
+
+- Data in, data out: pure functions, side effects (I/O, time) at the edges and passed in.
+- Expected failures are values (`error`, error unions in TS); panic for bugs only.
+- Money is integer cents (`money.Cents`), never floats.
+- Small units: split a file past ~400 lines, a function past ~60.
+- Names explain what, comments explain why.
+
+## Git
+
+- Conventional Commits. One topic per PR; open it ready for review (drafts skip CI), merge when CI is green.
+- Merge: rebase when the commits are logically separate, squash otherwise.
+- PR already merged → branch anew from `origin/main`, open a new PR.
+
+## Boundaries
+
+- `sudo`, system packages, global installs: the user runs them; ask with what and why.
+- Ask before changes that alter financial results or scope.
+- Language: code, comments, docs, commits in English; UI in German (Paraglide, English later).

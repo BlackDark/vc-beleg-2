@@ -1,0 +1,15 @@
+# Tool versions for development and CI (install with `mise install`).
+# pnpm must match packageManager in web/package.json.
+[tools]
+go = "1.27.3"
+node = "24.22.0"
+pnpm = "12.14.0"
+typst = "0.15.1"
+
+[tasks.check]
+description = "Everything CI checks"
+run = [
+  "test -z \"$(gofmt -l cmd internal)\"",
+  "go vet ./...",
+  "go test ./...",
+]

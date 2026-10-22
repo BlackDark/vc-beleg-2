@@ -1,0 +1,10 @@
+# build output
+/bin/
+node_modules/
+# local data
+/data-dev/
+*.db
+*.db-wal
+*.db-shm
+mise.local.toml
+.env
