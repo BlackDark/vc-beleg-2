@@ -20,21 +20,22 @@ import (
 // Config is read from MAHLZEIT_* environment variables. Secrets can also be
 // read from a file named by the variable with a _FILE suffix.
 type Config struct {
-	Listen         string
-	DataDir        string
-	BaseURL        string
-	SecureCookies  bool
-	SetupToken     string
-	PasswordLogin  bool
-	OIDC           *api.OIDCConfig
-	Typst          string
-	MaxUploadBytes int64
-	MaxPixels      int64
-	MaxPDFPages    int
-	LogLevel       slog.Level
-	AnthropicKey   string
-	ExtractModel   string
-	Mail           *mailimport.Config
+	Listen          string
+	DataDir         string
+	BaseURL         string
+	SecureCookies   bool
+	SetupToken      string
+	PasswordLogin   bool
+	OIDC            *api.OIDCConfig
+	Typst           string
+	MaxUploadBytes  int64
+	MaxPixels       int64
+	MaxPDFPages     int
+	LogLevel        slog.Level
+	AnthropicKey    string
+	ExtractModel    string
+	ExtractFallback bool
+	Mail            *mailimport.Config
 }
 
 func env(name, def string) string {
@@ -122,6 +123,9 @@ func LoadConfig() (*Config, error) {
 		errs = append(errs, err)
 	}
 	c.ExtractModel = env("MAHLZEIT_EXTRACT_MODEL", "")
+	if c.ExtractFallback, err = strconv.ParseBool(env("MAHLZEIT_EXTRACT_FALLBACK", "true")); err != nil {
+		errs = append(errs, errors.New("MAHLZEIT_EXTRACT_FALLBACK must be true or false"))
+	}
 	c.Mail, err = mailConfig()
 	errs = append(errs, err)
 	if err := c.LogLevel.UnmarshalText([]byte(env("MAHLZEIT_LOG_LEVEL", "info"))); err != nil {
