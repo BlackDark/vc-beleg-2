@@ -55,11 +55,14 @@ test("setup, receipts, check, close month and download the report", async ({ pag
   await page.getByRole("button", { name: "Monat abschließen" }).click();
   await expect(page.getByText("abgeschlossen").first()).toBeVisible();
 
-  const link = page.getByRole("link", { name: /Bericht herunterladen \(v1\)/ });
-  const href = await link.getAttribute("href");
-  const pdf = await page.request.get(href!);
-  expect(pdf.status()).toBe(200);
-  expect((await pdf.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: /Bericht herunterladen \(v1\)/ }).click();
+  const file = await (await download).createReadStream();
+  const head = await new Promise<string>((resolve) =>
+    file.once("data", (c) => resolve(String(c).slice(0, 5))),
+  );
+  expect(head).toBe("%PDF-");
+  expect((await download).suggestedFilename()).toBe(`Essenszuschuss-${month}-v1.pdf`);
 
   await page.goto("/reports");
   await expect(page.getByText(/v1 ·/)).toBeVisible();
