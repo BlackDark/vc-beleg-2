@@ -30,11 +30,14 @@ Not tax advice; confirm the rules with your tax adviser.
 
 ## Development
 
-Tools come from [`mise.toml`](mise.toml):
+Tools come from [`mise.toml`](mise.toml) (Go, Node, pnpm, Typst):
 
 ```bash
 mise install
-mise run check
+pnpm --dir web install
+mise run check        # gofmt, go vet, go test, Biome, tsc, Vitest
+mise run gen          # after API changes: OpenAPI document + TypeScript client
+mise run dev          # server on :8080; `pnpm --dir web dev` serves the UI with hot reload
 ```
 
 License: [AGPL-3.0-only](LICENSE).

@@ -8,3 +8,9 @@ node_modules/
 *.db-shm
 mise.local.toml
 .env
+/web/dist/*
+!/web/dist/.keep
+/web/src/paraglide/
+/web/.tanstack/
+/web/project.inlang/cache/
+/web/project.inlang/.gitignore

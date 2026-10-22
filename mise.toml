@@ -12,4 +12,18 @@ run = [
   "test -z \"$(gofmt -l cmd internal web)\"",
   "go vet ./...",
   "go test ./...",
+  "pnpm --dir web check",
 ]
+
+[tasks.gen]
+description = "Regenerate the OpenAPI document and the TypeScript client"
+run = ["go run ./cmd/mahlzeit openapi > web/openapi.json", "pnpm --dir web gen"]
+
+[tasks.build]
+description = "Build the SPA and the server binary"
+run = ["pnpm --dir web build", "CGO_ENABLED=0 go build -o bin/mahlzeit ./cmd/mahlzeit"]
+
+[tasks.dev]
+description = "Run the server with a local data directory (use `pnpm --dir web dev` for the UI)"
+env = { MAHLZEIT_DATA_DIR = "data-dev", MAHLZEIT_SETUP_TOKEN = "dev-setup-token", MAHLZEIT_BASE_URL = "http://localhost:5173" }
+run = "go run ./cmd/mahlzeit"
