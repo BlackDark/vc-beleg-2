@@ -4,6 +4,7 @@ package web
 import (
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
 	"path"
 	"strings"
@@ -11,6 +12,11 @@ import (
 
 //go:embed all:dist
 var dist embed.FS
+
+func init() {
+	// Not in every system MIME table; browsers expect it for the PWA manifest.
+	_ = mime.AddExtensionType(".webmanifest", "application/manifest+json")
+}
 
 // Handler serves the SPA: existing files directly, every other path the
 // index page for client-side routing.

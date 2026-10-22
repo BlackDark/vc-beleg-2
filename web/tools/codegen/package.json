@@ -1,0 +1,9 @@
+{
+  "name": "mahlzeit-codegen",
+  "private": true,
+  "description": "Runs Hey API with TypeScript 6, whose compiler API it needs (TypeScript 7.0 has none yet).",
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "typescript": "6.0.3"
+  }
+}

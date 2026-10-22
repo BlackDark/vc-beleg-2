@@ -26,4 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+      - run: pnpm --dir web install --frozen-lockfile
       - run: mise run check
+      - name: Generated API client is up to date
+        run: |
+          go run ./cmd/mahlzeit openapi > web/openapi.json
+          pnpm --dir web gen:api
+          git diff --exit-code -- web/openapi.json web/src/api/gen
