@@ -4,10 +4,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { queryClient } from "@/lib/api";
 import { applyStoredTheme } from "@/lib/theme";
+import { getLocale } from "@/paraglide/runtime";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
 applyStoredTheme();
+document.documentElement.lang = getLocale();
 
 const router = createRouter({
   routeTree,

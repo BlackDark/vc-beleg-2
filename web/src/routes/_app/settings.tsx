@@ -16,9 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Alert, Skeleton } from "@/components/ui/misc";
+import { formatDateTime } from "@/lib/format";
 import { sessionQuery, useSession, useUser } from "@/lib/session";
 import { applyTheme, type Theme } from "@/lib/theme";
 import { m } from "@/paraglide/messages";
+import { getLocale, setLocale } from "@/paraglide/runtime";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 
@@ -209,6 +211,16 @@ function ProfileCard() {
           <Field label={m.email()} htmlFor="email">
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
+          <Field label={m.language()} htmlFor="language">
+            <Select
+              id="language"
+              value={getLocale()}
+              onChange={(e) => setLocale(e.target.value as "de" | "en")}
+            >
+              <option value="de">{m.language_de()}</option>
+              <option value="en">{m.language_en()}</option>
+            </Select>
+          </Field>
           <Field label={m.theme()} htmlFor="theme">
             <Select id="theme" value={user.theme} onChange={(e) => setTheme(e.target.value as Theme)}>
               <option value="dark">{m.theme_dark()}</option>
@@ -304,9 +316,7 @@ function MailCard() {
           <>
             <p>{s.mailbox}</p>
             <p className="text-muted-foreground">
-              {s.lastRun
-                ? m.mail_last_run({ date: new Date(s.lastRun).toLocaleString("de-DE") })
-                : m.mail_not_run()}
+              {s.lastRun ? m.mail_last_run({ date: formatDateTime(s.lastRun) }) : m.mail_not_run()}
               {" · "}
               {m.mail_imported({ count: String(s.imported) })}
             </p>
