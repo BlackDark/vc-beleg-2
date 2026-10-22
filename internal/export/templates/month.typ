@@ -87,6 +87,7 @@
   B: "B · individuelle Versteuerung über die Lohnabrechnung",
   C: "C · steuerfreier Zuschuss bis zum Aufstockungsbetrag",
 )
+#let meal-label = (breakfast: "Frühstück", dinner: "Abendessen")
 #let warning-label = (
   weekend: "Wochenende",
   holiday: "Feiertag",
@@ -177,7 +178,7 @@
 #if r.values != none {
   v(4pt)
   text(size: 7.6pt, fill: muted)[
-    Werte #r.values.year: Sachbezugswert Mittagessen #money(r.values.lunch), steuerfreier Zuschuss #money(r.values.topUp), Höchstbetrag je Arbeitstag #money(r.values.lunch + r.values.topUp). Quelle: #r.values.source. Ein Zuschuss je Arbeitstag, höchstens in Höhe des Belegs (R 8.1 Abs. 7 Nr. 4 LStR).
+    Werte #r.values.year: Sachbezugswert Mittag-/Abendessen #money(r.values.lunch)#if r.days.any(d => d.at("meal", default: "lunch") == "breakfast") [, Frühstück #money(r.values.breakfast)], steuerfreier Zuschuss #money(r.values.topUp), Höchstbetrag je Arbeitstag #money(r.values.lunch + r.values.topUp)#if r.days.any(d => d.at("meal", default: "lunch") == "breakfast") [ (Frühstück #money(r.values.breakfast + r.values.topUp))]. Quelle: #r.values.source. Ein Zuschuss je Arbeitstag, höchstens in Höhe des Belegs (R 8.1 Abs. 7 Nr. 4 LStR).
   ]
 }
 
@@ -191,6 +192,8 @@
     let first = receipt(d.receiptIds.at(0))
     let notes = d.warnings.map(w => warning-label.at(w, default: w))
     if d.combined { notes.push("zusammengefasst") }
+    let meal = d.at("meal", default: "lunch")
+    if meal != "lunch" { notes.insert(0, meal-label.at(meal)) }
     if d.at("holiday", default: "") != "" { notes = notes.map(n => if n == "Feiertag" { d.holiday } else { n }) }
     let numbers = d.receiptIds.map(id => receipt(id).number).join(", ")
     let style(x) = if d.counted { x } else { text(fill: muted, x) }

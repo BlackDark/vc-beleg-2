@@ -52,6 +52,9 @@ test("setup, receipts, check, close month and download the report", async ({ pag
   // 7,67 + 7,67 + 6,00 (the receipt caps the allowance)
   await page.goto(`/month/${month}`);
   await expect(page.getByText("21,34 €").first()).toBeVisible();
+  // Breakfast on the 5th: 2,37 + 3,10 caps the 7,85 receipt at 5,47.
+  await page.getByRole("combobox", { name: /Mahlzeit am 05\./ }).selectOption("breakfast");
+  await expect(page.getByText("19,14 €").first()).toBeVisible();
   await page.getByRole("button", { name: "Monat abschließen" }).click();
   await expect(page.getByText("abgeschlossen").first()).toBeVisible();
 

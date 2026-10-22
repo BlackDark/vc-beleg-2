@@ -150,3 +150,33 @@ func TestChurchTax(t *testing.T) {
 		t.Errorf("totals = %+v", res.Totals)
 	}
 }
+
+func TestMeals(t *testing.T) {
+	tests := []struct {
+		meal                        Meal
+		model                       TaxModel
+		total                       money.Cents
+		allowance, taxable, taxFree money.Cents
+	}{
+		{Lunch, ModelFlat, 900, 767, 457, 310},
+		{Dinner, ModelFlat, 900, 767, 457, 310},
+		{Breakfast, ModelFlat, 900, 547, 237, 310},
+		{Breakfast, ModelFlat, 400, 400, 237, 163},
+		{Breakfast, ModelIndividual, 200, 200, 200, 0},
+		{Breakfast, ModelTaxFree, 400, 310, 147, 163}, // own share 0.90 reduces 2.37
+		{Breakfast, ModelTaxFree, 600, 310, 0, 310},   // own share 2.90 covers 2.37
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s/%s/%d", tt.meal, tt.model, tt.total), func(t *testing.T) {
+			meals := map[string]Meal{}
+			if tt.meal != Lunch {
+				meals["2026-10-05"] = tt.meal
+			}
+			res := Compute(Input{Month: "2026-10", Model: tt.model, Values: v2026, Meals: meals, Receipts: []Receipt{{ID: 1, Date: "2026-10-05", Total: tt.total}}})
+			d := res.Days[0]
+			if d.Meal != tt.meal || d.Allowance != tt.allowance || d.Taxable != tt.taxable || d.TaxFree != tt.taxFree {
+				t.Errorf("day = %+v", d)
+			}
+		})
+	}
+}

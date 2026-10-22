@@ -9,6 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/blackdark/vc-beleg-2/internal/app"
+	"github.com/blackdark/vc-beleg-2/internal/calc"
 )
 
 type receiptListQuery struct {
@@ -99,6 +100,11 @@ type combineBody struct {
 	Combined bool   `json:"combined"`
 }
 
+type mealBody struct {
+	Date string    `json:"date" format:"date"`
+	Meal calc.Meal `json:"meal" enum:"breakfast,lunch,dinner"`
+}
+
 type paidBody struct {
 	PaidOn string `json:"paidOn" doc:"YYYY-MM-DD; empty clears it" maxLength:"10"`
 }
@@ -116,6 +122,10 @@ func (s *Server) registerMonths(api huma.API) {
 	authed(s, api, huma.Operation{OperationID: "combineDay", Method: http.MethodPost, Path: "/api/days/combine", Tags: tags, Summary: "Combine the receipts of a date into one meal, or undo it"},
 		func(ctx context.Context, u *app.User, in *body[combineBody]) (*body[*app.Month], error) {
 			return wrap(s.app.SetCombined(ctx, u, in.Body.Date, in.Body.Combined))
+		})
+	authed(s, api, huma.Operation{OperationID: "setDayMeal", Method: http.MethodPost, Path: "/api/days/meal", Tags: tags, Summary: "Set the meal a date's allowance is for"},
+		func(ctx context.Context, u *app.User, in *body[mealBody]) (*body[*app.Month], error) {
+			return wrap(s.app.SetMeal(ctx, u, in.Body.Date, in.Body.Meal))
 		})
 	authed(s, api, huma.Operation{OperationID: "closeMonth", Method: http.MethodPost, Path: "/api/months/{month}/close", Tags: tags, Summary: "Freeze the month and generate the next report version"},
 		func(ctx context.Context, u *app.User, in *monthIn) (*body[*app.Month], error) {

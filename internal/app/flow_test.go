@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blackdark/vc-beleg-2/internal/calc"
 	"github.com/blackdark/vc-beleg-2/internal/db"
 	"github.com/blackdark/vc-beleg-2/internal/export"
 	"github.com/blackdark/vc-beleg-2/internal/money"
@@ -122,9 +123,14 @@ func TestMonthFlow(t *testing.T) {
 	if d := m.Result.Days[1]; !d.Combined || d.Total != 1170 {
 		t.Fatalf("combined day = %+v", d)
 	}
+	// Breakfast on the 7th: its lower benefit value caps the allowance.
+	m = must(a.SetMeal(ctx, u, "2026-10-07", calc.Breakfast))
+	if d := m.Result.Days[2]; d.Meal != calc.Breakfast || d.Allowance != 547 || m.Result.Totals.Allowance != 2*767+547 {
+		t.Fatalf("breakfast day = %+v", d)
+	}
 
 	m = must(a.CloseMonth(ctx, u, "2026-10"))
-	if m.Status != "closed" || len(m.Reports) != 1 || m.Reports[0].Payout != 3*767 {
+	if m.Status != "closed" || len(m.Reports) != 1 || m.Reports[0].Payout != 2*767+547 {
 		t.Fatalf("closed = %+v", m)
 	}
 	pdf, name := must2(a.ReportFile(ctx, u, m.Reports[0].ID))
@@ -135,6 +141,9 @@ func TestMonthFlow(t *testing.T) {
 	// Closed months are frozen.
 	if _, err := a.UncheckReceipt(ctx, u, ids[0]); !errors.Is(err, ErrMonthClosed) {
 		t.Fatalf("uncheck in closed month: %v", err)
+	}
+	if _, err := a.SetMeal(ctx, u, "2026-10-07", calc.Lunch); !errors.Is(err, ErrMonthClosed) {
+		t.Fatalf("meal in closed month: %v", err)
 	}
 	late := must(a.Import(ctx, u, "mail", "late.png", receiptImage(250), "", &MailMeta{MessageID: "<m1@x>", From: "me@example.com"}))
 	late = must(a.UpdateReceipt(ctx, u, late.ID, ReceiptInput{Date: "2026-10-08", Total: 700}))
@@ -149,7 +158,7 @@ func TestMonthFlow(t *testing.T) {
 	must(a.ReopenMonth(ctx, u, "2026-10", "Beleg vom 8. nachgereicht"))
 	must(a.CheckReceipt(ctx, u, late.ID, ReceiptInput{Date: "2026-10-08", Total: 700}))
 	m = must(a.CloseMonth(ctx, u, "2026-10"))
-	if len(m.Reports) != 2 || m.Reports[0].Version != 2 || m.Reports[0].ReopenReason != "Beleg vom 8. nachgereicht" || m.Reports[0].Payout != 3*767+700 {
+	if len(m.Reports) != 2 || m.Reports[0].Version != 2 || m.Reports[0].ReopenReason != "Beleg vom 8. nachgereicht" || m.Reports[0].Payout != 2*767+547+700 {
 		t.Fatalf("v2 = %+v", m.Reports)
 	}
 	v1, _ := must2(a.ReportFile(ctx, u, m.Reports[1].ID))

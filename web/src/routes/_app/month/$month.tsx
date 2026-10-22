@@ -7,6 +7,7 @@ import {
   combineDayMutation,
   getMonthOptions,
   reopenMonthMutation,
+  setDayMealMutation,
   setMonthPaidMutation,
 } from "@/api/gen/@tanstack/react-query.gen";
 import type { Day, Month } from "@/api/gen/types.gen";
@@ -16,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Field, Input } from "@/components/ui/input";
+import { Field, Input, Select } from "@/components/ui/input";
 import { Alert, EmptyState, Skeleton } from "@/components/ui/misc";
 import { formatDate, formatMonth, formatWeekday, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ function MonthView({ month: mo }: { month: Month }) {
   };
   const close = useMutation({ ...closeMonthMutation(), onSuccess });
   const combine = useMutation({ ...combineDayMutation(), onSuccess });
+  const meal = useMutation({ ...setDayMealMutation(), onSuccess });
   const t = mo.result.totals;
   const open = mo.status === "open";
   const latest = mo.reports[0];
@@ -106,6 +108,7 @@ function MonthView({ month: mo }: { month: Month }) {
                   day={d}
                   editable={open}
                   onCombine={(combined) => combine.mutate({ body: { date: d.date, combined } })}
+                  onMeal={(next) => meal.mutate({ body: { date: d.date, meal: next } })}
                 />
               ))}
             </ul>
@@ -199,12 +202,16 @@ function DayRow({
   day: d,
   editable,
   onCombine,
+  onMeal,
 }: {
   day: Day;
   editable: boolean;
   onCombine: (combined: boolean) => void;
+  onMeal: (meal: Meal) => void;
 }) {
   const several = d.receiptIds.length + d.ignored.length > 1;
+  // Reports frozen before meals existed carry none: they were lunch.
+  const meal = d.meal ?? "lunch";
   return (
     <li className={cn("grid gap-1 px-4 py-3", !d.counted && "text-muted-foreground")}>
       <div className="flex items-center justify-between gap-3">
@@ -243,10 +250,31 @@ function DayRow({
         ) : several ? (
           <span>{d.combined ? m.combined() : m.highest_counts()}</span>
         ) : null}
+        {editable ? (
+          <Select
+            aria-label={m.meal_on({ date: formatDate(d.date) })}
+            value={meal}
+            onChange={(e) => onMeal(e.target.value as Meal)}
+            className="ml-auto h-7 w-auto py-0 text-xs"
+          >
+            {meals.map((x) => (
+              <option key={x} value={x}>
+                {mealText(x)}
+              </option>
+            ))}
+          </Select>
+        ) : meal !== "lunch" ? (
+          <span>{mealText(meal)}</span>
+        ) : null}
       </div>
     </li>
   );
 }
+
+type Meal = Day["meal"];
+const meals: Meal[] = ["breakfast", "lunch", "dinner"];
+const mealText = (x: Meal) =>
+  ({ breakfast: m.meal_breakfast(), lunch: m.meal_lunch(), dinner: m.meal_dinner() })[x];
 
 function PaidControl({ month: mo, onSuccess }: { month: Month; onSuccess: (m: Month) => void }) {
   const [date, setDate] = useState(todayISO());

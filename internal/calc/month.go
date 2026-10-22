@@ -33,6 +33,31 @@ const (
 	soliBP    = 550  // § 4 SolZG
 )
 
+// Meal is the meal an allowance is granted for (R1).
+type Meal string
+
+// Meals; lunch is the default.
+const (
+	Breakfast Meal = "breakfast"
+	Lunch     Meal = "lunch"
+	Dinner    Meal = "dinner"
+)
+
+// Valid reports whether m is a known meal.
+func (m Meal) Valid() bool { return m == Breakfast || m == Lunch || m == Dinner }
+
+// benefitValue is the meal's official value for the year.
+func benefitValue(m Meal, v rates.Values) money.Cents {
+	switch m {
+	case Breakfast:
+		return v.Breakfast
+	case Dinner:
+		return v.Dinner
+	default:
+		return v.Lunch
+	}
+}
+
 // DefaultDayLimit is the 15-day simplification (R4).
 const DefaultDayLimit = 15
 
@@ -51,6 +76,7 @@ type Input struct {
 	Values      *rates.Values // nil when the year has no values
 	Receipts    []Receipt
 	Combined    map[string]bool   // dates whose receipts are combined into one meal
+	Meals       map[string]Meal   // dates with a meal other than lunch
 	Holidays    map[string]string // date → name, for the company's state
 	ChurchTaxBP int64             // church tax on the flat tax; 0 with proof of non-membership
 }
@@ -61,6 +87,7 @@ type Day struct {
 	ReceiptIDs []int64     `json:"receiptIds" doc:"receipts making up the day's total"`
 	Ignored    []int64     `json:"ignored" doc:"further receipts of the day that do not count"`
 	Combined   bool        `json:"combined"`
+	Meal       Meal        `json:"meal" enum:"breakfast,lunch,dinner"`
 	Total      money.Cents `json:"total"`
 	Counted    bool        `json:"counted"`
 	Allowance  money.Cents `json:"allowance"`
@@ -133,6 +160,10 @@ func mealDays(in Input) []Day {
 		})
 		d := Day{Date: date, ReceiptIDs: []int64{}, Ignored: []int64{}, Rules: []string{"R1"}, Warnings: dayWarnings(date, in.Holidays)}
 		d.Holiday = in.Holidays[date]
+		d.Meal = Lunch
+		if m := in.Meals[date]; m.Valid() {
+			d.Meal = m
+		}
 		if len(rs) > 1 {
 			d.Warnings = append(d.Warnings, "several_receipts")
 		}
@@ -188,17 +219,18 @@ func countBest(days []Day, limit int) {
 
 // split computes allowance, tax-free and taxable part of a counted day.
 func split(d *Day, model TaxModel, v rates.Values) {
+	value := benefitValue(d.Meal, v)
 	switch model {
 	case ModelTaxFree:
 		// R8: the employee's own share covers the benefit value as far as it goes.
 		d.Allowance = min(d.Total, v.TopUp)
 		own := d.Total - d.Allowance
-		d.Taxable = min(d.Allowance, max(0, v.Lunch-own))
+		d.Taxable = min(d.Allowance, max(0, value-own))
 		d.Rules = append(d.Rules, "R2", "R8")
 	default:
 		// R6/R7: up to the benefit value taxable, the top-up above it tax-free.
-		d.Allowance = min(d.Total, v.Lunch+v.TopUp)
-		d.Taxable = min(d.Allowance, v.Lunch)
+		d.Allowance = min(d.Total, value+v.TopUp)
+		d.Taxable = min(d.Allowance, value)
 		rule := "R6"
 		if model == ModelIndividual {
 			rule = "R7"
