@@ -10,7 +10,9 @@
       "!openapi.json",
       "!tools/codegen/node_modules",
       "!.tanstack",
-      "!project.inlang"
+      "!project.inlang",
+      "!playwright-report",
+      "!test-results"
     ]
   },
   "formatter": {

@@ -15,7 +15,8 @@
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -35,6 +36,7 @@
     "@biomejs/biome": "2.5.15",
     "@inlang/paraglide-js": "2.29.0",
     "@inlang/plugin-message-format": "4.5.4",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/vite": "4.3.3",
     "@tanstack/router-plugin": "1.168.47",
     "@types/node": "24.19.2",
