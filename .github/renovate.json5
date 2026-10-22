@@ -69,6 +69,13 @@
       automerge: true,
     },
     {
+      // Without bump the go directive in go.mod stays behind the grouped toolchain.
+      description: "Move the go.mod go directive with the toolchain",
+      matchManagers: ["gomod"],
+      matchDepTypes: ["golang"],
+      rangeStrategy: "bump",
+    },
+    {
       description: "Node runtime (mise + node images) in one PR",
       matchManagers: ["mise", "dockerfile"],
       matchPackageNames: ["node", "docker.io/library/node"],
