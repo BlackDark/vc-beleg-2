@@ -9,7 +9,7 @@ English terms are used in code and docs; the German term is what the UI shows.
 ### Parties
 
 **Company** (Firma):
-The employer paying the meal allowance; it carries the Bundesland and the flat-tax settings.
+The employer paying the meal allowance; it carries the Bundesland, the church-tax setting and the optional legal basis (Rechtsgrundlage) printed on reports.
 
 **Employee** (Mitarbeiter):
 The person receiving the meal allowance. Currently one per company.
@@ -46,8 +46,16 @@ The official value of a meal for a calendar year (2026 lunch: €4.57).
 The employer's payment for one meal on one working day, capped by the receipt total and by benefit value + €3.10.
 _Avoid_: Zulage, Essensgeld, Pauschale
 
-**Counted receipt** (angesetzter Beleg):
-A checked receipt that earns an allowance in its month. Above the day limit, the highest totals are counted; the rest are **not counted** (nicht angesetzt).
+**Meal day** (Essenstag):
+A date with at least one checked receipt. Its total is the highest receipt of that day, or the sum of all of them when the employee combines them.
+
+**Counted day** (angesetzter Tag):
+A meal day that earns an allowance in its month. Above the day limit, the meal days with the highest totals count; the rest are **not counted** (nicht angesetzt).
+_Avoid_: counted receipt
+
+**Payout** (Auszahlung):
+The sum of a month's allowances, paid by the company to the employee at month end. The employee pays every meal personally first.
+_Avoid_: Erstattung, Zuzahlung
 
 **Tax model** (Versteuerungsmodell):
 How the taxable part of an allowance is handled: **A** company taxes it at a flat 25 % (default), **B** taxed individually through payroll, **C** allowance limited to €3.10, fully tax-free.
@@ -67,4 +75,4 @@ The part of an allowance up to the benefit value.
 One employee's calendar month: `offen`, then `abgeschlossen` (numbers frozen, report generated), optionally `ausgezahlt` with a date.
 
 **Monthly report** (Monatsbericht):
-The PDF of a closed month: summary, day table and every counted receipt. Reopening a month creates a new report version; old versions stay unchanged.
+The PDF of a closed month: summary, day table and the receipts of every counted day. Reopening a month creates a new report version; old versions stay unchanged.

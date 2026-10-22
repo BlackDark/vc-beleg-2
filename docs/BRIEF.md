@@ -11,8 +11,10 @@ One employee (the managing shareholder), lunch from the supermarket on most work
 - Login only through OIDC (generic discovery, tested against Pocket ID), access by `sub`/email allowlist; break-glass admin token from env.
 - Receipt import: photo or PDF upload (desktop and phone camera), and IMAP polling (every 5 min) of a dedicated mailbox, attachments from allowed senders only. Processed mails are marked read and moved to a folder; deleting them is an option.
 - Claude vision fills date, total, merchant; every imported receipt is `zu prüfen` until the employee checks it. Missing date → warning, must be entered by hand. Duplicate detection by checksum.
-- Calculation per month: one checked receipt per day by its own date; above the day limit (15) the highest totals count; allowance capped by receipt total; tax models A, B, C; yearly benefit values.
-- Warnings, never blocks: weekend, public holiday (Bundesland of the company), second receipt on the same day.
+- Calculation per month: a receipt belongs to the day of its own date; per day the highest receipt counts, or all receipts of that day combined when the employee chooses so (warning); above the day limit (15) the meal days with the highest totals count; allowance capped by the receipt total; tax models A, B, C; benefit values from 2026.
+- Company settings: Bundesland, church tax on the flat tax (simplified rate or proof of non-membership; the owner uses proof → none), optional legal basis text printed on every report.
+- The employee pays meals personally; the company pays the month's allowances in one sum at month end and the flat tax to the tax office.
+- Warnings, never blocks: weekend, public holiday (Bundesland of the company), several receipts on one day, receipt dated in a closed month (counts only after reopening).
 - Month lifecycle `offen` → `abgeschlossen` → `ausgezahlt`; reopening needs a reason and creates report v2, v1 stays byte-identical.
 - Monthly report PDF (Typst, layout borrowed from Spesen): summary with totals per tax part and who pays the tax, day table, every counted receipt appended.
 - German UI (Paraglide ready for English), PWA, light/dark, usable from 360 px.
@@ -23,5 +25,5 @@ One employee (the managing shareholder), lunch from the supermarket on most work
 - **More than 15 days per month**: optional higher day limit with an Arbeitstage calendar (Urlaub, Krank marked; other days count) as proof.
 - **Backup to S3**: options are cluster volume backups (Longhorn/Velero/k8up), Litestream sidecar, or a built-in scheduled upload of DB snapshot + new files + reports, optionally encrypted. Owner decides later.
 - **Automatic reports**: generate at month start, deliver by mail or S3.
-- **Other meals**: breakfast or dinner instead of lunch (values already stored), see ADR 0003.
+- **Other meals**: breakfast or dinner instead of lunch (values already stored), see ADR 0002.
 - **Further employees or companies**: the data model allows them; the UI does not.

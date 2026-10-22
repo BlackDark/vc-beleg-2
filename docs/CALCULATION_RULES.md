@@ -8,7 +8,7 @@ State of research 2026-10-22. Secondary sources only where marked; confirm with 
 |---|---|---|---|---|---|
 | 2026 | €2.37 | €4.57 | €3.10 | €7.67 | 16. SvEV-Änderungsverordnung, BGBl. 29.12.2025 (€71 / €137 per month) |
 
-Earlier and later years are added as rows; a missing year blocks the calculation of that year.
+Later years are added as rows; a missing year blocks the calculation of that year.
 
 ## Rules
 
@@ -35,5 +35,5 @@ Earlier and later years are added as rows; a missing year blocks the calculation
 ## To verify
 
 - Full texts of BMF 18.01.2019 and BayLfSt 13.05.2026 (S 2334.1.1-43/10 St36); R4 rests on secondary sources.
-- Church-tax rate on the flat tax in Baden-Württemberg (simplified procedure) vs. proof of non-membership.
-- Benefit values for earlier years if past months are entered.
+- Church-tax rate on the flat tax in Baden-Württemberg (simplified procedure); not needed while the owner proves non-membership.
+- Whether several receipts of one day may be combined into one meal (R2); combining is offered with a warning until confirmed.
