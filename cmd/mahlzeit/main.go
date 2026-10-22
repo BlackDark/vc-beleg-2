@@ -91,7 +91,7 @@ func serve() error {
 	}
 	var reader app.Extractor
 	if cfg.AnthropicKey != "" {
-		reader = extract.New(cfg.AnthropicKey, cfg.ExtractModel)
+		reader = extract.New(cfg.AnthropicKey, cfg.ExtractModel, cfg.ExtractFallback)
 	}
 	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages}, log, reader)
 	if err != nil {

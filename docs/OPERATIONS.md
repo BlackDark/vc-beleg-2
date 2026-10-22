@@ -21,6 +21,7 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_OIDC_ALLOWED_EMAILS` / `_GROUPS` / `_SUBJECTS` | – | Who may log in. The first allowed identity creates the account (or is linked to the password account); afterwards only that identity logs in. |
 | `ANTHROPIC_API_KEY` | – | Enables reading receipts with Claude. Without it, date, total and merchant are typed by hand. |
 | `MAHLZEIT_EXTRACT_MODEL` | `claude-opus-5-5` | Claude model for reading receipts. |
+| `MAHLZEIT_EXTRACT_FALLBACK` | `true` | When Claude declines a receipt, the API retries it with a fallback model it picks. Turn off for models without server-side fallback. |
 | `MAHLZEIT_IMAP_HOST` | – | Enables the mail import, e.g. `imap.example.com` (TLS). |
 | `MAHLZEIT_IMAP_PORT` | `993` | IMAP TLS port. |
 | `MAHLZEIT_IMAP_USERNAME` / `_PASSWORD` | – | Mailbox credentials (required with the host). |
@@ -56,7 +57,7 @@ Use a dedicated mailbox. Send receipts as attachments or inline photos (JPEG, PN
 
 ## Receipt reading
 
-With `ANTHROPIC_API_KEY`, every new receipt is sent to the Claude API, which returns date, total and merchant; the image leaves your server for this. Nothing counts until you check it. Failed readings can be retried from the check screen.
+With `ANTHROPIC_API_KEY`, every new receipt is sent to the Claude API, which returns date, total and merchant; the image leaves your server for this. Nothing counts until you check it. Temporary API errors are retried automatically; a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
 
 ## Backup and restore
 

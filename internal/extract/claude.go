@@ -24,16 +24,20 @@ const DefaultModel = "claude-opus-5-5"
 
 // Claude calls the Messages API.
 type Claude struct {
-	client anthropic.Client
-	model  string
+	client   anthropic.Client
+	model    string
+	fallback bool
 }
 
 // New creates a reader; the API key comes from the caller's configuration.
-func New(apiKey, model string) *Claude {
+// With fallback, a refused request is answered by the fallback model the API
+// picks for the refusal category instead of failing.
+func New(apiKey, model string, fallback bool, opts ...option.RequestOption) *Claude {
 	if model == "" {
 		model = DefaultModel
 	}
-	return &Claude{client: anthropic.NewClient(option.WithAPIKey(apiKey)), model: model}
+	opts = append([]option.RequestOption{option.WithAPIKey(apiKey), option.WithMaxRetries(4)}, opts...)
+	return &Claude{client: anthropic.NewClient(opts...), model: model, fallback: fallback}
 }
 
 const prompt = `This is a German shop or restaurant receipt (Kassenbon) photographed or scanned by its owner.
@@ -62,21 +66,26 @@ type answer struct {
 // Extract implements app.Extractor.
 func (c *Claude) Extract(ctx context.Context, mime string, data []byte) (app.Extraction, error) {
 	b64 := base64.StdEncoding.EncodeToString(data)
-	var file anthropic.ContentBlockParamUnion
+	var file anthropic.BetaContentBlockParamUnion
 	if mime == "application/pdf" {
-		file = anthropic.NewDocumentBlock(anthropic.Base64PDFSourceParam{Data: b64})
+		file = anthropic.NewBetaDocumentBlock(anthropic.BetaBase64PDFSourceParam{Data: b64})
 	} else {
-		file = anthropic.NewImageBlockBase64(mime, b64)
+		file = anthropic.NewBetaImageBlock(anthropic.BetaBase64ImageSourceParam{Data: b64, MediaType: anthropic.BetaBase64ImageSourceMediaType(mime)})
 	}
-	resp, err := c.client.Messages.New(ctx, anthropic.MessageNewParams{
+	params := anthropic.BetaMessageNewParams{
 		Model:     c.model,
 		MaxTokens: 4000,
-		OutputConfig: anthropic.OutputConfigParam{
-			Effort: anthropic.OutputConfigEffortLow,
-			Format: anthropic.JSONOutputFormatParam{Schema: schema},
+		OutputConfig: anthropic.BetaOutputConfigParam{
+			Effort: anthropic.BetaOutputConfigEffortLow,
+			Format: anthropic.BetaJSONOutputFormatParam{Schema: schema},
 		},
-		Messages: []anthropic.MessageParam{anthropic.NewUserMessage(file, anthropic.NewTextBlock(prompt))},
-	})
+		Messages: []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(file, anthropic.NewBetaTextBlock(prompt))},
+	}
+	if c.fallback {
+		params.Betas = []anthropic.AnthropicBeta{anthropic.AnthropicBetaServerSideFallback2026_07_01}
+		params.Fallbacks = anthropic.BetaFallbacksParamOfDefault()
+	}
+	resp, err := c.client.Beta.Messages.New(ctx, params)
 	if err != nil {
 		var apiErr *anthropic.Error
 		if errors.As(err, &apiErr) {
@@ -84,12 +93,12 @@ func (c *Claude) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 		}
 		return app.Extraction{}, err
 	}
-	if resp.StopReason == anthropic.StopReasonRefusal {
+	if resp.StopReason == anthropic.BetaStopReasonRefusal {
 		return app.Extraction{}, errors.New("claude declined the request")
 	}
 	var text strings.Builder
 	for _, block := range resp.Content {
-		if t, ok := block.AsAny().(anthropic.TextBlock); ok {
+		if t, ok := block.AsAny().(anthropic.BetaTextBlock); ok {
 			text.WriteString(t.Text)
 		}
 	}
