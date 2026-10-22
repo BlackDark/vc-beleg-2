@@ -17,6 +17,7 @@ The rules are simple until they aren't: one allowance per working day, at most â
 - **Correct amounts**: 2026 benefit values, tax models A (company pays 25 % flat tax on the taxable part), B (taxable part through payroll) and C (allowance capped at the â‚¬3.10 top-up; tax-free when your own share covers the benefit value, otherwise the rest goes through payroll), rule IDs on every day.
 - **Receipts in, no typing**: photo or PDF upload, or mail them to a dedicated mailbox; Claude reads date, total and merchant, you confirm.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.
+- **Phone and desktop**: installable web app in German or English, from 360 px wide.
 
 ## Install
 
