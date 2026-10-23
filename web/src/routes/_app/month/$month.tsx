@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/input";
 import { Alert, EmptyState, Skeleton } from "@/components/ui/misc";
+import { ProveDaysToggle, WorkingDayCalendar } from "@/components/working-days";
 import { formatDate, formatMonth, formatWeekday, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
@@ -95,25 +96,28 @@ function MonthView({ month: mo }: { month: Month }) {
       ))}
 
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
-        <Card className="overflow-hidden p-0">
-          {mo.result.days.length === 0 ? (
-            <div className="p-4">
-              <EmptyState icon={LockIcon} title={m.month_no_days()} text={m.month_no_days_text()} />
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {mo.result.days.map((d) => (
-                <DayRow
-                  key={d.date}
-                  day={d}
-                  editable={open}
-                  onCombine={(combined) => combine.mutate({ body: { date: d.date, combined } })}
-                  onMeal={(next) => meal.mutate({ body: { date: d.date, meal: next } })}
-                />
-              ))}
-            </ul>
-          )}
-        </Card>
+        <div className="grid min-w-0 gap-4">
+          <Card className="overflow-hidden p-0">
+            {mo.result.days.length === 0 ? (
+              <div className="p-4">
+                <EmptyState icon={LockIcon} title={m.month_no_days()} text={m.month_no_days_text()} />
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {mo.result.days.map((d) => (
+                  <DayRow
+                    key={d.date}
+                    day={d}
+                    editable={open}
+                    onCombine={(combined) => combine.mutate({ body: { date: d.date, combined } })}
+                    onMeal={(next) => meal.mutate({ body: { date: d.date, meal: next } })}
+                  />
+                ))}
+              </ul>
+            )}
+          </Card>
+          {mo.result.proveDays ? <WorkingDayCalendar month={mo} onSuccess={onSuccess} /> : null}
+        </div>
 
         <div className="grid content-start gap-4">
           <Card>
@@ -123,7 +127,9 @@ function MonthView({ month: mo }: { month: Month }) {
             </CardHeader>
             <CardContent>
               <Row label={m.counted_days()}>
-                {t.days} / {mo.result.dayLimit}
+                {mo.result.proveDays
+                  ? m.working_days_count({ days: String(t.days), working: String(t.workingDays) })
+                  : `${t.days} / ${mo.result.dayLimit}`}
               </Row>
               <Row label={m.receipts_total()}>
                 <Money cents={t.receipts} />
@@ -158,6 +164,7 @@ function MonthView({ month: mo }: { month: Month }) {
 
           <Card>
             <CardContent className="grid gap-3 py-5">
+              {open || mo.result.proveDays ? <ProveDaysToggle month={mo} onSuccess={onSuccess} /> : null}
               {open ? (
                 <Button
                   size="lg"

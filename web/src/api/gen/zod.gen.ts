@@ -2,6 +2,19 @@
 
 import * as z from 'zod';
 
+export const zCalendarDay = z.object({
+    date: z.string(),
+    holiday: z.string().optional(),
+    mark: z.enum([
+        'vacation',
+        'sick',
+        'off',
+        'worked',
+        ''
+    ]),
+    working: z.boolean()
+});
+
 export const zCombineBody = z.object({
     combined: z.boolean(),
     date: z.iso.date()
@@ -62,6 +75,17 @@ export const zMailStatus = z.object({
     mailbox: z.string()
 });
 
+export const zMarkBody = z.object({
+    date: z.iso.date(),
+    mark: z.enum([
+        'vacation',
+        'sick',
+        'off',
+        'worked',
+        ''
+    ])
+});
+
 export const zMealBody = z.object({
     date: z.iso.date(),
     meal: z.enum([
@@ -88,6 +112,10 @@ export const zProfileInput = z.object({
         'light',
         'system'
     ])
+});
+
+export const zProveBody = z.object({
+    prove: z.boolean()
 });
 
 export const zReasonBody = z.object({
@@ -193,7 +221,8 @@ export const zTotals = z.object({
     receipts: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     soli: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     taxFree: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    taxable: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+    taxable: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    workingDays: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
 });
 
 export const zUser = z.object({
@@ -230,10 +259,12 @@ export const zValues = z.object({
 
 export const zResult = z.object({
     blockers: z.array(z.string()),
+    calendar: z.array(zCalendarDay),
     dayLimit: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     days: z.array(zDay),
     model: z.string(),
     month: z.string(),
+    proveDays: z.boolean(),
     totals: zTotals,
     values: zValues.optional()
 });
@@ -260,6 +291,13 @@ export const zCombineDayBody = zCombineBody;
  * OK
  */
 export const zCombineDayResponse = zMonth;
+
+export const zSetDayMarkBody = zMarkBody;
+
+/**
+ * OK
+ */
+export const zSetDayMarkResponse = zMonth;
 
 export const zSetDayMealBody = zMealBody;
 
@@ -337,6 +375,17 @@ export const zSetMonthPaidPath = z.object({
  * OK
  */
 export const zSetMonthPaidResponse = zMonth;
+
+export const zSetMonthProveDaysBody = zProveBody;
+
+export const zSetMonthProveDaysPath = z.object({
+    month: z.string().regex(/^[0-9]{4}-[0-9]{2}$/)
+});
+
+/**
+ * OK
+ */
+export const zSetMonthProveDaysResponse = zMonth;
 
 export const zReopenMonthBody = zReasonBody;
 

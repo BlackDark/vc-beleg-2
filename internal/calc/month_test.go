@@ -180,3 +180,48 @@ func TestMeals(t *testing.T) {
 		})
 	}
 }
+
+func TestProvenWorkingDays(t *testing.T) {
+	// 20 lunches on every weekday of October 2026 except the 1st and 2nd,
+	// plus Saturday the 10th (worked) and Saturday the 17th (not marked).
+	days := []int{5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 26, 27, 28, 29, 30}
+	rs := receiptsOn(dates("2026-10", days...), 900)
+	marks := map[string]Mark{"2026-10-10": Worked, "2026-10-26": Vacation, "2026-10-27": Sick}
+	res := Compute(Input{Month: "2026-10", Model: ModelFlat, Values: v2026, Receipts: rs, ProveDays: true, Marks: marks, Holidays: holidays.Year("BW", 2026)})
+
+	// October 2026 in BW: 22 weekdays, no weekday holiday; +1 worked, −2 absent.
+	if res.DayLimit != 0 || !res.ProveDays || len(res.Calendar) != 31 || res.Totals.WorkingDays != 21 {
+		t.Fatalf("result = limit %d, prove %v, calendar %d, working %d", res.DayLimit, res.ProveDays, len(res.Calendar), res.Totals.WorkingDays)
+	}
+	if res.Totals.Days != 19 || res.Totals.Allowance != 19*767 {
+		t.Errorf("totals = %+v", res.Totals)
+	}
+	for _, d := range res.Days {
+		notWorking := d.Date == "2026-10-17" || d.Date == "2026-10-26" || d.Date == "2026-10-27"
+		if d.Counted == notWorking || notWorking != slices.Contains(d.Warnings, "not_working_day") {
+			t.Errorf("%s counted = %v, warnings %v", d.Date, d.Counted, d.Warnings)
+		}
+	}
+}
+
+func TestCalendar(t *testing.T) {
+	cal := calendar("2026-10", map[string]Mark{"2026-10-03": Worked, "2026-10-05": Off}, holidays.Year("BW", 2026))
+	tests := []struct {
+		date    string
+		working bool
+	}{
+		{"2026-10-01", true},  // Thursday
+		{"2026-10-03", true},  // Saturday, holiday, worked
+		{"2026-10-04", false}, // Sunday
+		{"2026-10-05", false}, // Monday off
+	}
+	for _, tt := range tests {
+		i := slices.IndexFunc(cal, func(c CalendarDay) bool { return c.Date == tt.date })
+		if i < 0 || cal[i].Working != tt.working {
+			t.Errorf("%s: %+v", tt.date, cal)
+		}
+	}
+	if cal[2].Holiday != "Tag der Deutschen Einheit" {
+		t.Errorf("holiday = %+v", cal[2])
+	}
+}

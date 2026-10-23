@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { changePassword, checkReceipt, closeMonth, combineDay, deleteReceipt, getMailStatus, getMe, getMonth, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, setDayMeal, setMonthPaid, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
-import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SetDayMealData, SetDayMealError, SetDayMealResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
+import { changePassword, checkReceipt, closeMonth, combineDay, deleteReceipt, getMailStatus, getMe, getMonth, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, setDayMark, setDayMeal, setMonthPaid, setMonthProveDays, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
+import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SetDayMarkData, SetDayMarkError, SetDayMarkResponse, SetDayMealData, SetDayMealError, SetDayMealResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetMonthProveDaysData, SetMonthProveDaysError, SetMonthProveDaysResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
 
 /**
  * Combine the receipts of a date into one meal, or undo it
@@ -13,6 +13,23 @@ export const combineDayMutation = (options?: Partial<Options<CombineDayData>>): 
     const mutationOptions: UseMutationOptions<CombineDayResponse, CombineDayError, Options<CombineDayData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await combineDay({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set a date's working-day calendar entry
+ */
+export const setDayMarkMutation = (options?: Partial<Options<SetDayMarkData>>): UseMutationOptions<SetDayMarkResponse, SetDayMarkError, Options<SetDayMarkData>> => {
+    const mutationOptions: UseMutationOptions<SetDayMarkResponse, SetDayMarkError, Options<SetDayMarkData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setDayMark({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -219,6 +236,23 @@ export const setMonthPaidMutation = (options?: Partial<Options<SetMonthPaidData>
     const mutationOptions: UseMutationOptions<SetMonthPaidResponse, SetMonthPaidError, Options<SetMonthPaidData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await setMonthPaid({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Prove working days for the month instead of the 15-day limit
+ */
+export const setMonthProveDaysMutation = (options?: Partial<Options<SetMonthProveDaysData>>): UseMutationOptions<SetMonthProveDaysResponse, SetMonthProveDaysError, Options<SetMonthProveDaysData>> => {
+    const mutationOptions: UseMutationOptions<SetMonthProveDaysResponse, SetMonthProveDaysError, Options<SetMonthProveDaysData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setMonthProveDays({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

@@ -205,5 +205,18 @@
   "err_oidc_not_allowed": "This identity may not log in.",
   "err_oidc_other_identity": "The account is linked to another identity.",
   "err_oidc_failed": "Login at the identity provider failed.",
-  "err_oidc_unavailable": "The identity provider is unreachable."
+  "err_oidc_unavailable": "The identity provider is unreachable.",
+  "prove_days": "Prove working days",
+  "prove_days_hint": "Instead of the 15-day limit, every receipt day on a working day counts. Record vacation, sick and days off in the calendar.",
+  "working_days_title": "Working days ({count})",
+  "working_days_hint": "Tap: weekdays cycle through working day, vacation, sick and day off; weekends and holidays between off and worked.",
+  "working_days_frozen": "Frozen with the month.",
+  "mark_working": "Working day",
+  "mark_vacation": "Vacation",
+  "mark_sick": "Sick",
+  "mark_off": "Day off",
+  "mark_worked": "worked",
+  "mark_free": "off",
+  "warning_not_working_day": "Not a working day, not counted",
+  "working_days_count": "{days} of {working} working days"
 }

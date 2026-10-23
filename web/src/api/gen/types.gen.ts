@@ -4,6 +4,16 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type CalendarDay = {
+    date: string;
+    holiday?: string;
+    /**
+     * empty: no entry
+     */
+    mark: 'vacation' | 'sick' | 'off' | 'worked' | '';
+    working: boolean;
+};
+
 export type CombineBody = {
     combined: boolean;
     date: string;
@@ -29,7 +39,7 @@ export type Day = {
     taxable: number;
     total: number;
     /**
-     * weekend, holiday, several_receipts, over_limit
+     * weekend, holiday, several_receipts, over_limit, not_working_day
      */
     warnings: Array<string>;
 };
@@ -87,6 +97,14 @@ export type MailStatus = {
      * user@host/folder
      */
     mailbox: string;
+};
+
+export type MarkBody = {
+    date: string;
+    /**
+     * empty clears the entry
+     */
+    mark: 'vacation' | 'sick' | 'off' | 'worked' | '';
 };
 
 export type MealBody = {
@@ -147,6 +165,10 @@ export type ProfileInput = {
     theme: 'dark' | 'light' | 'system';
 };
 
+export type ProveBody = {
+    prove: boolean;
+};
+
 export type ReasonBody = {
     reason: string;
 };
@@ -203,10 +225,18 @@ export type Result = {
      * values_missing
      */
     blockers: Array<string>;
+    /**
+     * working-day calendar; empty without proof
+     */
+    calendar: Array<CalendarDay>;
+    /**
+     * 0 when working days are proven
+     */
     dayLimit: number;
     days: Array<Day>;
     model: string;
     month: string;
+    proveDays: boolean;
     totals: Totals;
     values?: Values;
 };
@@ -274,6 +304,10 @@ export type Totals = {
     soli: number;
     taxFree: number;
     taxable: number;
+    /**
+     * working days in the calendar; 0 without proof
+     */
+    workingDays: number;
 };
 
 export type User = {
@@ -322,6 +356,31 @@ export type CombineDayResponses = {
 };
 
 export type CombineDayResponse = CombineDayResponses[keyof CombineDayResponses];
+
+export type SetDayMarkData = {
+    body: MarkBody;
+    path?: never;
+    query?: never;
+    url: '/api/days/mark';
+};
+
+export type SetDayMarkErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type SetDayMarkError = SetDayMarkErrors[keyof SetDayMarkErrors];
+
+export type SetDayMarkResponses = {
+    /**
+     * OK
+     */
+    200: Month;
+};
+
+export type SetDayMarkResponse = SetDayMarkResponses[keyof SetDayMarkResponses];
 
 export type SetDayMealData = {
     body: MealBody;
@@ -603,6 +662,33 @@ export type SetMonthPaidResponses = {
 };
 
 export type SetMonthPaidResponse = SetMonthPaidResponses[keyof SetMonthPaidResponses];
+
+export type SetMonthProveDaysData = {
+    body: ProveBody;
+    path: {
+        month: string;
+    };
+    query?: never;
+    url: '/api/months/{month}/prove-days';
+};
+
+export type SetMonthProveDaysErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type SetMonthProveDaysError = SetMonthProveDaysErrors[keyof SetMonthProveDaysErrors];
+
+export type SetMonthProveDaysResponses = {
+    /**
+     * OK
+     */
+    200: Month;
+};
+
+export type SetMonthProveDaysResponse = SetMonthProveDaysResponses[keyof SetMonthProveDaysResponses];
 
 export type ReopenMonthData = {
     body: ReasonBody;

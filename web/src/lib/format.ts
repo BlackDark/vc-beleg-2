@@ -1,6 +1,6 @@
 import { getLocale } from "@/paraglide/runtime";
 
-const intlLocale = () => (getLocale() === "en" ? "en-GB" : "de-DE");
+export const intlLocale = () => (getLocale() === "en" ? "en-GB" : "de-DE");
 
 /** Formats EUR cents, e.g. 767 → "7,67 €" (de) or "€7.67" (en). */
 export function formatCents(cents: number | undefined | null): string {

@@ -94,23 +94,15 @@ func (a *App) compute(ctx context.Context, q querier, s *employeeSettings, month
 	if err := loadMeals(ctx, q, s.EmployeeID, month, in.Meals); err != nil {
 		return calc.Result{}, err
 	}
-	return calc.Compute(in), nil
-}
-
-func loadMeals(ctx context.Context, q querier, employeeID int64, month string, into map[string]calc.Meal) error {
-	rows, err := q.QueryContext(ctx, `SELECT date, meal FROM day_meals WHERE employee_id = ? AND date LIKE ?`, employeeID, month+"-%")
-	if err != nil {
-		return err
+	if err := q.QueryRowContext(ctx, `SELECT prove_working_days FROM months WHERE employee_id = ? AND month = ?`, s.EmployeeID, month).Scan(&in.ProveDays); err != nil && err != sql.ErrNoRows {
+		return calc.Result{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var d, meal string
-		if err := rows.Scan(&d, &meal); err != nil {
-			return err
+	if in.ProveDays {
+		if in.Marks, err = loadMarks(ctx, q, s.EmployeeID, month); err != nil {
+			return calc.Result{}, err
 		}
-		into[d] = calc.Meal(meal)
 	}
-	return rows.Err()
+	return calc.Compute(in), nil
 }
 
 func (a *App) reportRefs(ctx context.Context, q querier, monthID int64) ([]ReportRef, error) {
@@ -182,59 +174,6 @@ func (a *App) loadMonth(ctx context.Context, q querier, u *User, month string) (
 		m.Blockers = append(m.Blockers, "future_month")
 	}
 	return m, nil
-}
-
-// SetCombined combines the receipts of a date into one meal, or undoes it.
-func (a *App) SetCombined(ctx context.Context, u *User, date string, combined bool) (*Month, error) {
-	if err := validDate(date); err != nil {
-		return nil, err
-	}
-	err := a.tx(ctx, func(tx *sql.Tx) error {
-		if err := monthOpen(ctx, tx, u.EmployeeID, date[:7]); err != nil {
-			return err
-		}
-		q := `DELETE FROM combined_days WHERE employee_id = ? AND date = ?`
-		if combined {
-			q = `INSERT OR IGNORE INTO combined_days(employee_id, date) VALUES (?, ?)`
-		}
-		if _, err := tx.ExecContext(ctx, q, u.EmployeeID, date); err != nil {
-			return err
-		}
-		return a.audit(ctx, tx, u.ID, "day", u.EmployeeID, "combine", "", map[string]any{"date": date, "combined": combined})
-	})
-	if err != nil {
-		return nil, err
-	}
-	return a.GetMonth(ctx, u, date[:7])
-}
-
-// SetMeal sets the meal a date's allowance is for; lunch is the default.
-func (a *App) SetMeal(ctx context.Context, u *User, date string, meal calc.Meal) (*Month, error) {
-	if err := validDate(date); err != nil {
-		return nil, err
-	}
-	if !meal.Valid() {
-		return nil, Invalid("day.meal", "the meal must be breakfast, lunch or dinner")
-	}
-	err := a.tx(ctx, func(tx *sql.Tx) error {
-		if err := monthOpen(ctx, tx, u.EmployeeID, date[:7]); err != nil {
-			return err
-		}
-		var err error
-		if meal == calc.Lunch {
-			_, err = tx.ExecContext(ctx, `DELETE FROM day_meals WHERE employee_id = ? AND date = ?`, u.EmployeeID, date)
-		} else {
-			_, err = tx.ExecContext(ctx, `INSERT INTO day_meals(employee_id, date, meal) VALUES (?, ?, ?) ON CONFLICT(employee_id, date) DO UPDATE SET meal = excluded.meal`, u.EmployeeID, date, string(meal))
-		}
-		if err != nil {
-			return err
-		}
-		return a.audit(ctx, tx, u.ID, "day", u.EmployeeID, "meal", "", map[string]any{"date": date, "meal": meal})
-	})
-	if err != nil {
-		return nil, err
-	}
-	return a.GetMonth(ctx, u, date[:7])
 }
 
 // ListMonths returns every month that has receipts or a report, newest first.

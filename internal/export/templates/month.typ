@@ -2,6 +2,7 @@
 // snapshot); user content is only ever passed as data.
 #let s = json("data.json")
 #let r = s.result
+#let proven = r.at("proveDays", default: false)
 #let t = r.totals
 #let accent = rgb("#0f766e")
 #let muted = rgb("#64748b")
@@ -93,6 +94,7 @@
   holiday: "Feiertag",
   several_receipts: "mehrere Belege",
   over_limit: "nicht angesetzt (über Tagesgrenze)",
+  not_working_day: "nicht angesetzt (kein Arbeitstag)",
 )
 
 // ── Title ──────────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@
     #grid(columns: (auto, auto), column-gutter: 8pt, row-gutter: 4pt, align: (left, right),
       text(fill: muted, "Version"), text(weight: "semibold", str(s.version)),
       text(fill: muted, "Modell"), r.model,
-      text(fill: muted, "Tagesgrenze"), str(r.dayLimit) + " Tage",
+      ..if proven { (text(fill: muted, "Arbeitstage"), "nachgewiesen") } else { (text(fill: muted, "Tagesgrenze"), str(r.dayLimit) + " Tage") },
     )
   ],
 )
@@ -148,7 +150,7 @@
   #grid(
     columns: (1fr, auto),
     row-gutter: 7pt,
-    text(fill: muted, "Angesetzte Tage"), str(t.days) + " von höchstens " + str(r.dayLimit),
+    text(fill: muted, "Angesetzte Tage"), if proven { str(t.days) + " (" + str(t.workingDays) + " Arbeitstage nachgewiesen)" } else { str(t.days) + " von höchstens " + str(r.dayLimit) },
     text(fill: muted, "Summe der angesetzten Belege"), money(t.receipts),
     text(fill: muted, "davon steuerfrei"), money(t.taxFree),
     text(fill: muted, "davon steuerpflichtig (Sachbezugswert)"), money(t.taxable),
@@ -210,6 +212,37 @@
   }),
   footer: ("", "", "", "Summe", money(t.receipts), money(t.allowance), money(t.taxFree), money(t.taxable)),
 )
+
+// ── Working days ───────────────────────────────────────────────────────
+#let mark-label = (vacation: "Urlaub", sick: "Krank", off: "Frei", worked: "gearbeitet")
+#if proven {
+  section("Arbeitstage")
+  let first = r.calendar.at(0).date.split("-").map(int)
+  let lead = datetime(year: first.at(0), month: first.at(1), day: 1).weekday() - 1
+  let meal-days = r.days.map(d => d.date)
+  let cell(c) = {
+    let day = int(c.date.slice(8, 10))
+    let label = if c.mark != "" { mark-label.at(c.mark) } else if c.at("holiday", default: "") != "" { c.holiday } else if c.working { "Arbeitstag" } else { "" }
+    box(
+      width: 100%, height: 11mm, inset: 3pt, radius: 3pt,
+      fill: if c.working { rgb("#ccfbf1") } else { soft },
+      stroke: if meal-days.contains(c.date) { 0.8pt + accent } else { none },
+    )[
+      #text(weight: "semibold", str(day)) \
+      #text(size: 6.5pt, fill: muted, label)
+    ]
+  }
+  set text(size: 8pt)
+  grid(
+    columns: (1fr,) * 7,
+    gutter: 3pt,
+    ..weekdays.map(w => align(center, text(size: 7.6pt, weight: "semibold", fill: muted, w))),
+    ..range(lead).map(_ => []),
+    ..r.calendar.map(cell),
+  )
+  v(2pt)
+  text(size: 7.6pt, fill: muted)[Arbeitstage hell hinterlegt, Tage mit Beleg umrandet. Montag bis Freitag ohne Feiertag sind Arbeitstage, sofern nicht als Urlaub, Krank oder Frei erfasst; gearbeitete Wochenend- und Feiertage sind einzeln erfasst. Mehr als 15 Zuschüsse im Monat nur für nachgewiesene Arbeitstage (R 8.1 Abs. 7 Nr. 4 LStR).]
+}
 
 // ── Receipts ───────────────────────────────────────────────────────────
 #section("Belege")

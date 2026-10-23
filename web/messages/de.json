@@ -205,5 +205,18 @@
   "err_oidc_not_allowed": "Diese Identität darf sich nicht anmelden.",
   "err_oidc_other_identity": "Das Konto ist mit einer anderen Identität verknüpft.",
   "err_oidc_failed": "Die Anmeldung beim Identity Provider ist fehlgeschlagen.",
-  "err_oidc_unavailable": "Der Identity Provider ist nicht erreichbar."
+  "err_oidc_unavailable": "Der Identity Provider ist nicht erreichbar.",
+  "prove_days": "Arbeitstage nachweisen",
+  "prove_days_hint": "Statt der 15-Tage-Grenze zählt jeder Belegtag an einem Arbeitstag. Urlaub, Krankheit und freie Tage im Kalender erfassen.",
+  "working_days_title": "Arbeitstage ({count})",
+  "working_days_hint": "Tippen: Werktage wechseln zwischen Arbeitstag, Urlaub, Krank und Frei; Wochenenden und Feiertage zwischen frei und gearbeitet.",
+  "working_days_frozen": "Mit dem Monat abgeschlossen.",
+  "mark_working": "Arbeitstag",
+  "mark_vacation": "Urlaub",
+  "mark_sick": "Krank",
+  "mark_off": "Frei",
+  "mark_worked": "gearbeitet",
+  "mark_free": "frei",
+  "warning_not_working_day": "Kein Arbeitstag, nicht angesetzt",
+  "working_days_count": "{days} von {working} Arbeitstagen"
 }
