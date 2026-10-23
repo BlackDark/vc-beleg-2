@@ -15,7 +15,7 @@ Snap or mail your lunch receipts, let it pick the days that count, and archive a
 The rules are simple until they aren't: one allowance per working day, at most €7.67 in 2026, at most 15 days without proof, the receipt caps the amount, and up to €4.57 of it (the benefit value) is taxable. Mahlzeit applies them to your receipts and documents every month.
 
 - **Correct amounts**: 2026 benefit values, tax models A (company pays 25 % flat tax on the taxable part), B (taxable part through payroll) and C (allowance capped at the €3.10 top-up; tax-free when your own share covers the benefit value, otherwise the rest goes through payroll), rule IDs on every day.
-- **Receipts in, no typing**: photo or PDF upload, or mail them to a dedicated mailbox; an LLM (Claude, Gemini or any OpenAI-compatible API such as OpenRouter or a local Ollama) reads date, total and merchant, you confirm.
+- **Receipts in, no typing**: photo or PDF upload, mail them to a dedicated mailbox, or drop them into a WebDAV folder (Nextcloud, NAS); an LLM (Claude, Gemini or any OpenAI-compatible API such as OpenRouter or a local Ollama) reads date, total and merchant, you confirm.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.
 - **Phone and desktop**: installable web app in German or English, from 360 px wide.
 
@@ -27,7 +27,7 @@ One container with one volume, images for amd64 and arm64 on GHCR:
 ghcr.io/blackdark/vc-beleg-2:<version>
 ```
 
-Kubernetes example: [deploy/kubernetes.yaml](deploy/kubernetes.yaml). Configuration, Pocket ID, mail import, backup: [docs/OPERATIONS.md](docs/OPERATIONS.md).
+Kubernetes example: [deploy/kubernetes.yaml](deploy/kubernetes.yaml). Configuration, Pocket ID, mail and folder import, backup: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Documentation
 

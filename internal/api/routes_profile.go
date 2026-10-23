@@ -45,4 +45,8 @@ func (s *Server) registerProfile(api huma.API) {
 		func(ctx context.Context, u *app.User, _ *empty) (*body[app.MailStatus], error) {
 			return wrap(s.app.MailStatus(), nil)
 		})
+	authed(s, api, huma.Operation{OperationID: "getFolderStatus", Method: http.MethodGet, Path: "/api/folder-status", Tags: tags, Summary: "State of the folder import"},
+		func(ctx context.Context, u *app.User, _ *empty) (*body[app.FolderStatus], error) {
+			return wrap(s.app.FolderStatus(), nil)
+		})
 }

@@ -69,6 +69,20 @@ export type Extraction = {
     uncertain?: Array<string>;
 };
 
+export type FolderStatus = {
+    enabled: boolean;
+    /**
+     * URL of the watched folder, without credentials
+     */
+    folder: string;
+    /**
+     * receipts imported since the server started
+     */
+    imported: number;
+    lastError: string;
+    lastRun: string;
+};
+
 export type LoginBody = {
     password: string;
     username: string;
@@ -159,7 +173,7 @@ export type Receipt = {
     note: string;
     number: string;
     pages: number;
-    source: 'upload' | 'mail';
+    source: 'upload' | 'mail' | 'folder';
     status: 'pending' | 'checked';
     total: number;
     /**
@@ -316,6 +330,31 @@ export type CombineDayResponses = {
 };
 
 export type CombineDayResponse = CombineDayResponses[keyof CombineDayResponses];
+
+export type GetFolderStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/folder-status';
+};
+
+export type GetFolderStatusErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetFolderStatusError = GetFolderStatusErrors[keyof GetFolderStatusErrors];
+
+export type GetFolderStatusResponses = {
+    /**
+     * OK
+     */
+    200: FolderStatus;
+};
+
+export type GetFolderStatusResponse = GetFolderStatusResponses[keyof GetFolderStatusResponses];
 
 export type LoginData = {
     body: LoginBody;

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangleIcon, ChevronRightIcon, MailIcon, ReceiptIcon } from "lucide-react";
+import { AlertTriangleIcon, ChevronRightIcon, FolderIcon, MailIcon, ReceiptIcon } from "lucide-react";
 import { listReceiptsOptions } from "@/api/gen/@tanstack/react-query.gen";
 import { Money, PageHeader, ReceiptStatusBadge, warningText } from "@/components/common";
 import { MonthSwitcher } from "@/components/month-switcher";
@@ -87,6 +87,8 @@ function Receipts() {
                 <span className="flex items-center gap-2 truncate text-sm font-medium">
                   {r.source === "mail" ? (
                     <MailIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  ) : r.source === "folder" ? (
+                    <FolderIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   ) : null}
                   {r.merchant || r.filename}
                 </span>

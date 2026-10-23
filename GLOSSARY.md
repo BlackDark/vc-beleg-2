@@ -18,7 +18,7 @@ _Avoid_: User (that is the login identity, not the domain person)
 ### Receipts
 
 **Receipt** (Beleg):
-Evidence of one meal purchase, imported by upload or mail, with date, total and merchant.
+Evidence of one meal purchase, imported by upload, mail or folder, with date, total and merchant.
 _Avoid_: Bon, document, invoice
 
 **Receipt status** (Status):
@@ -27,6 +27,9 @@ _Avoid_: approved, valid
 
 **Mail import** (Mail-Eingang):
 Receipts taken from attachments of mails sent to the dedicated mailbox by an allowed sender.
+
+**Folder import** (Ordner-Import):
+Receipts taken from image and PDF files placed in a watched WebDAV folder; processed files are moved to a subfolder.
 
 ### Calculation
 

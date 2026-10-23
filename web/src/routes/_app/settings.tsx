@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   changePasswordMutation,
+  getFolderStatusOptions,
   getMailStatusOptions,
   getSettingsOptions,
   listRatesOptions,
@@ -53,6 +54,7 @@ function SettingsPage() {
           <ProfileCard />
           <PasswordCard />
           <MailCard />
+          <FolderCard />
           <RatesCard />
         </div>
       </div>
@@ -301,20 +303,49 @@ function PasswordCard() {
 
 function MailCard() {
   const q = useQuery({ ...getMailStatusOptions(), refetchInterval: 30_000 });
-  const s = q.data;
+  return (
+    <ImportCard
+      title={m.settings_mail()}
+      off={m.mail_off()}
+      status={q.data && { ...q.data, location: q.data.mailbox }}
+    />
+  );
+}
+
+function FolderCard() {
+  const q = useQuery({ ...getFolderStatusOptions(), refetchInterval: 30_000 });
+  return (
+    <ImportCard
+      title={m.settings_folder()}
+      off={m.folder_off()}
+      status={q.data && { ...q.data, location: q.data.folder }}
+    />
+  );
+}
+
+type ImportStatus = {
+  enabled: boolean;
+  location: string;
+  lastRun: string;
+  lastError: string;
+  imported: number;
+};
+
+/** State of a background import (mail or folder). */
+function ImportCard({ title, off, status: s }: { title: string; off: string; status?: ImportStatus }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{m.settings_mail()}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-2 text-sm">
         {!s ? (
           <Skeleton className="h-12" />
         ) : !s.enabled ? (
-          <p className="text-muted-foreground">{m.mail_off()}</p>
+          <p className="text-muted-foreground">{off}</p>
         ) : (
           <>
-            <p>{s.mailbox}</p>
+            <p className="break-all">{s.location}</p>
             <p className="text-muted-foreground">
               {s.lastRun ? m.mail_last_run({ date: formatDateTime(s.lastRun) }) : m.mail_not_run()}
               {" · "}

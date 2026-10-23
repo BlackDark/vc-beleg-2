@@ -170,6 +170,37 @@
         },
         "type": "object"
       },
+      "FolderStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "folder": {
+            "description": "URL of the watched folder, without credentials",
+            "type": "string"
+          },
+          "imported": {
+            "description": "receipts imported since the server started",
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "lastRun": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "folder",
+          "lastRun",
+          "lastError",
+          "imported"
+        ],
+        "type": "object"
+      },
       "LoginBody": {
         "additionalProperties": false,
         "properties": {
@@ -446,7 +477,8 @@
           "source": {
             "enum": [
               "upload",
-              "mail"
+              "mail",
+              "folder"
             ],
             "type": "string"
           },
@@ -927,6 +959,42 @@
         "summary": "Combine the receipts of a date into one meal, or undo it",
         "tags": [
           "months"
+        ]
+      }
+    },
+    "/api/folder-status": {
+      "get": {
+        "operationId": "getFolderStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderStatus"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "State of the folder import",
+        "tags": [
+          "profile"
         ]
       }
     },

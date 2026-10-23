@@ -26,6 +26,7 @@ import (
 	"github.com/blackdark/vc-beleg-2/internal/db"
 	"github.com/blackdark/vc-beleg-2/internal/export"
 	"github.com/blackdark/vc-beleg-2/internal/extract"
+	"github.com/blackdark/vc-beleg-2/internal/folderimport"
 	"github.com/blackdark/vc-beleg-2/internal/mailimport"
 	"github.com/blackdark/vc-beleg-2/web"
 	_ "time/tzdata" // report time stamps in Europe/Berlin on a minimal image
@@ -100,6 +101,9 @@ func serve() error {
 	if cfg.Mail != nil {
 		go mailimport.Run(ctx, *cfg.Mail, a, log)
 	}
+	if cfg.Folder != nil {
+		go folderimport.Run(ctx, *cfg.Folder, a, log)
+	}
 	if err := ensureSetupToken(ctx, a, cfg, log); err != nil {
 		return err
 	}
@@ -114,7 +118,7 @@ func serve() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil, "extraction", reader != nil, "provider", cfg.Extract.Provider, "mail", cfg.Mail != nil)
+	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil, "extraction", reader != nil, "provider", cfg.Extract.Provider, "mail", cfg.Mail != nil, "folder", cfg.Folder != nil)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}

@@ -34,6 +34,11 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_IMAP_PROCESSED_FOLDER` | `Processed` | Processed mails are moved here (created if missing). |
 | `MAHLZEIT_IMAP_DELETE` | `false` | Delete processed mails instead of moving them. |
 | `MAHLZEIT_IMAP_INTERVAL` | `5m` | Polling interval (at least `1m`). |
+| `MAHLZEIT_WEBDAV_URL` | – | Enables the folder import: WebDAV URL of the watched folder, without credentials. See [Folder import](#folder-import-webdav). |
+| `MAHLZEIT_WEBDAV_USERNAME` / `_PASSWORD` | – | WebDAV credentials; use an app password. |
+| `MAHLZEIT_WEBDAV_PROCESSED_FOLDER` | `Verarbeitet` | Subfolder processed files are moved to (created if missing). |
+| `MAHLZEIT_WEBDAV_DELETE` | `false` | Delete processed files instead of moving them. |
+| `MAHLZEIT_WEBDAV_INTERVAL` | `5m` | Polling interval (at least `1m`). |
 | `MAHLZEIT_TYPST` | `typst` | Typst binary (the image sets `/usr/local/bin/typst`). |
 | `MAHLZEIT_MAX_UPLOAD_MB` | `25` | Upload limit per file (1–25). |
 | `MAHLZEIT_MAX_MEGAPIXELS` | `40` | Image size limit (1–40). |
@@ -58,6 +63,12 @@ The identity is bound to issuer and subject, never to the email address. Logout 
 ## Mail import
 
 Use a dedicated mailbox. Send receipts as attachments or inline photos (JPEG, PNG, PDF) from an allowed address. Every few minutes Mahlzeit fetches unread mail, imports the attachments as receipts to check (with the subject as note) and moves the mail to the processed folder. Settings → Mail-Eingang shows the last run and the last error.
+
+## Folder import (WebDAV)
+
+Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a scanner app on your phone. Every few minutes Mahlzeit imports the JPEG, PNG and PDF files in it (not in subfolders) as receipts to check and moves them to `Verarbeitet/` with a time stamp in the name. Files younger than a minute are left for the next run, so uploads in progress are not read half-written. Other files stay untouched. A file Mahlzeit cannot read (or larger than the upload limit) is moved too and named in Settings → Ordner-Import, which also shows the last run.
+
+Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<folder>`, with an app password (Settings → Security → Devices & sessions).
 
 ## Receipt reading
 
