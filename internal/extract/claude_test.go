@@ -49,7 +49,7 @@ func fakeAPI(t *testing.T, stopReason, text string) (*httptest.Server, *map[stri
 
 func TestExtractSendsFallback(t *testing.T) {
 	srv, body, header := fakeAPI(t, "end_turn", `{"date":"2026-10-05","total":7.89,"merchant":"REWE","uncertain":[]}`)
-	c := New("key", "", true, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
+	c := NewClaude("key", "", true, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
 	ex, err := c.Extract(context.Background(), "image/png", []byte("png"))
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestExtractSendsFallback(t *testing.T) {
 	if ex.Date != "2026-10-05" || ex.Total != 789 || ex.Merchant != "REWE" {
 		t.Fatalf("extraction = %+v", ex)
 	}
-	if (*body)["fallbacks"] != "default" || (*body)["model"] != DefaultModel {
+	if (*body)["fallbacks"] != "default" || (*body)["model"] != ClaudeModel {
 		t.Fatalf("request = %v", *body)
 	}
 	if !strings.Contains(header.Get("anthropic-beta"), "server-side-fallback-2026-07-01") {
@@ -67,7 +67,7 @@ func TestExtractSendsFallback(t *testing.T) {
 
 func TestExtractWithoutFallback(t *testing.T) {
 	srv, body, _ := fakeAPI(t, "end_turn", `{"date":null,"total":null,"merchant":null,"uncertain":[]}`)
-	c := New("key", "claude-sonnet-5-5", false, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
+	c := NewClaude("key", "claude-sonnet-5-5", false, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
 	if _, err := c.Extract(context.Background(), "application/pdf", []byte("%PDF-1")); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestExtractWithoutFallback(t *testing.T) {
 
 func TestExtractRefusal(t *testing.T) {
 	srv, _, _ := fakeAPI(t, "refusal", "")
-	c := New("key", "", true, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
+	c := NewClaude("key", "", true, option.WithBaseURL(srv.URL), option.WithMaxRetries(0))
 	if _, err := c.Extract(context.Background(), "image/png", []byte("png")); err == nil || !strings.Contains(err.Error(), "declined") {
 		t.Fatalf("err = %v", err)
 	}

@@ -19,9 +19,13 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_OIDC_SCOPES` | `openid,profile,email,groups` | Requested scopes. |
 | `MAHLZEIT_OIDC_GROUPS_CLAIM` | `groups` | Claim holding the groups. |
 | `MAHLZEIT_OIDC_ALLOWED_EMAILS` / `_GROUPS` / `_SUBJECTS` | – | Who may log in. The first allowed identity creates the account (or is linked to the password account); afterwards only that identity logs in. |
-| `ANTHROPIC_API_KEY` | – | Enables reading receipts with Claude. Without it, date, total and merchant are typed by hand. |
-| `MAHLZEIT_EXTRACT_MODEL` | `claude-opus-5-5` | Claude model for reading receipts. |
-| `MAHLZEIT_EXTRACT_FALLBACK` | `true` | When Claude declines a receipt, the API retries it with a fallback model it picks. Turn off for models without server-side fallback. |
+| `MAHLZEIT_EXTRACT_PROVIDER` | `claude` | Who reads receipts: `claude`, `gemini` or `openai` (any OpenAI-compatible API). See [Receipt reading](#receipt-reading). |
+| `ANTHROPIC_API_KEY` | – | Claude: enables reading receipts. Without it, date, total and merchant are typed by hand. |
+| `GEMINI_API_KEY` | – | Gemini: Google AI Studio key (required with `gemini`). |
+| `OPENAI_API_KEY` | – | OpenAI-compatible: API key; leave empty for local servers. |
+| `MAHLZEIT_EXTRACT_MODEL` | `claude-opus-5-5` / `gemini-flash-latest` / – | Model; required with `openai`. It must read images, and PDFs for PDF receipts. |
+| `MAHLZEIT_EXTRACT_BASE_URL` | provider's API | Another endpoint, e.g. `https://openrouter.ai/api/v1` or `http://ollama:11434/v1` (default for `openai`: `https://api.openai.com/v1`). |
+| `MAHLZEIT_EXTRACT_FALLBACK` | `true` | Claude only: when Claude declines a receipt, the API retries it with a fallback model it picks. Turn off for models without server-side fallback. |
 | `MAHLZEIT_IMAP_HOST` | – | Enables the mail import, e.g. `imap.example.com` (TLS). |
 | `MAHLZEIT_IMAP_PORT` | `993` | IMAP TLS port. |
 | `MAHLZEIT_IMAP_USERNAME` / `_PASSWORD` | – | Mailbox credentials (required with the host). |
@@ -57,7 +61,16 @@ Use a dedicated mailbox. Send receipts as attachments or inline photos (JPEG, PN
 
 ## Receipt reading
 
-With `ANTHROPIC_API_KEY`, every new receipt is sent to the Claude API, which returns date, total and merchant; the image leaves your server for this. Nothing counts until you check it. Temporary API errors are retried automatically; a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
+Every new receipt is sent to the configured model, which returns date, total and merchant; the image leaves your server for this (except with a local model). Nothing counts until you check it. Rate limits and temporary API errors are retried automatically; with Claude, a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
+
+| Provider | Settings |
+| --- | --- |
+| Claude (default) | `ANTHROPIC_API_KEY` |
+| Gemini | `MAHLZEIT_EXTRACT_PROVIDER=gemini`, `GEMINI_API_KEY` from Google AI Studio |
+| OpenRouter | `MAHLZEIT_EXTRACT_PROVIDER=openai`, `MAHLZEIT_EXTRACT_BASE_URL=https://openrouter.ai/api/v1`, `OPENAI_API_KEY`, `MAHLZEIT_EXTRACT_MODEL` (e.g. a vision model's OpenRouter ID) |
+| Ollama, LM Studio | `MAHLZEIT_EXTRACT_PROVIDER=openai`, `MAHLZEIT_EXTRACT_BASE_URL=http://<host>:11434/v1`, `MAHLZEIT_EXTRACT_MODEL` (a vision model) |
+
+Free tiers (Gemini, some OpenRouter models) may let the provider use receipts to improve its models or have people review them; check the provider's terms, especially for use in the EU.
 
 ## Backup and restore
 
