@@ -105,6 +105,15 @@ type mealBody struct {
 	Meal calc.Meal `json:"meal" enum:"breakfast,lunch,dinner"`
 }
 
+type markBody struct {
+	Date string    `json:"date" format:"date"`
+	Mark calc.Mark `json:"mark" enum:"vacation,sick,off,worked," doc:"empty clears the entry"`
+}
+
+type proveBody struct {
+	Prove bool `json:"prove"`
+}
+
 type paidBody struct {
 	PaidOn string `json:"paidOn" doc:"YYYY-MM-DD; empty clears it" maxLength:"10"`
 }
@@ -126,6 +135,14 @@ func (s *Server) registerMonths(api huma.API) {
 	authed(s, api, huma.Operation{OperationID: "setDayMeal", Method: http.MethodPost, Path: "/api/days/meal", Tags: tags, Summary: "Set the meal a date's allowance is for"},
 		func(ctx context.Context, u *app.User, in *body[mealBody]) (*body[*app.Month], error) {
 			return wrap(s.app.SetMeal(ctx, u, in.Body.Date, in.Body.Meal))
+		})
+	authed(s, api, huma.Operation{OperationID: "setDayMark", Method: http.MethodPost, Path: "/api/days/mark", Tags: tags, Summary: "Set a date's working-day calendar entry"},
+		func(ctx context.Context, u *app.User, in *body[markBody]) (*body[*app.Month], error) {
+			return wrap(s.app.SetMark(ctx, u, in.Body.Date, in.Body.Mark))
+		})
+	authed(s, api, huma.Operation{OperationID: "setMonthProveDays", Method: http.MethodPost, Path: "/api/months/{month}/prove-days", Tags: tags, Summary: "Prove working days for the month instead of the 15-day limit"},
+		func(ctx context.Context, u *app.User, in *monthBody[proveBody]) (*body[*app.Month], error) {
+			return wrap(s.app.SetProveDays(ctx, u, in.Month, in.Body.Prove))
 		})
 	authed(s, api, huma.Operation{OperationID: "closeMonth", Method: http.MethodPost, Path: "/api/months/{month}/close", Tags: tags, Summary: "Freeze the month and generate the next report version"},
 		func(ctx context.Context, u *app.User, in *monthIn) (*body[*app.Month], error) {

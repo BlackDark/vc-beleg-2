@@ -17,7 +17,7 @@ Later years are added as rows; a missing year blocks the calculation of that yea
 | R1 | One allowance per working day, for one meal: lunch by default, breakfast or dinner when chosen for the day. | R 8.1 Abs. 7 Nr. 4 LStR; BMF 18.01.2019 |
 | R2 | Allowance ≤ receipt total and ≤ benefit value of the meal + €3.10 (2026 breakfast: €5.47). | BMF 18.01.2019 |
 | R3 | Food bought for eating right away or during the break counts (supermarket purchases included); extra items on a receipt do not harm when the meal part is identifiable. | BMF 18.01.2019; BayLfSt 13.05.2026 (secondary) |
-| R4 | At most 15 allowances per month need no proof of working days; above 15 every day must be a provable working day. | R 8.1 Abs. 7 Nr. 4 LStR (secondary sources) |
+| R4 | At most 15 allowances per month need no proof of working days; above 15 every day must be a provable working day. With proof chosen for a month, every meal day on a working day counts and no day limit applies: Monday to Friday except public holidays, minus days marked vacation, sick or off, plus weekends and holidays marked worked. The report includes the calendar. | R 8.1 Abs. 7 Nr. 4 LStR (secondary sources) |
 | R5 | Homeoffice days and part-time days under 6 h qualify; a meal right after work counts. | BayLfSt 13.05.2026 (secondary) |
 | R6 | Model A: allowance ≤ receipt total and ≤ benefit value + top-up; taxable part = min(allowance, benefit value), the rest tax-free. The company pays 25 % flat tax on the month's taxable sum, Soli 5.5 % and church tax on that tax (fractions of a cent dropped); no social security. | § 40 Abs. 2 Satz 1 Nr. 1 EStG; § 4 SolZG |
 | R7 | Model B: parts as in R6, the taxable part taxed individually through payroll. | § 8 Abs. 2 EStG |

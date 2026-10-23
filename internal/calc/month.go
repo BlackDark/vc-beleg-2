@@ -61,6 +61,29 @@ func benefitValue(m Meal, v rates.Values) money.Cents {
 // DefaultDayLimit is the 15-day simplification (R4).
 const DefaultDayLimit = 15
 
+// Mark is the employee's entry for a date in the working-day calendar.
+type Mark string
+
+// Marks; a date without one is a working day from Monday to Friday unless
+// it is a public holiday.
+const (
+	Vacation Mark = "vacation"
+	Sick     Mark = "sick"
+	Off      Mark = "off"
+	Worked   Mark = "worked" // a weekend or holiday the employee worked
+)
+
+// Valid reports whether m is a known mark.
+func (m Mark) Valid() bool { return m == Vacation || m == Sick || m == Off || m == Worked }
+
+// CalendarDay is one date of the working-day calendar.
+type CalendarDay struct {
+	Date    string `json:"date"`
+	Mark    Mark   `json:"mark" enum:"vacation,sick,off,worked," doc:"empty: no entry"`
+	Working bool   `json:"working"`
+	Holiday string `json:"holiday,omitempty"`
+}
+
 // Receipt is a checked receipt dated in the month.
 type Receipt struct {
 	ID    int64
@@ -77,6 +100,8 @@ type Input struct {
 	Receipts    []Receipt
 	Combined    map[string]bool   // dates whose receipts are combined into one meal
 	Meals       map[string]Meal   // dates with a meal other than lunch
+	ProveDays   bool              // working days are proven by the calendar: no day limit
+	Marks       map[string]Mark   // working-day calendar entries
 	Holidays    map[string]string // date → name, for the company's state
 	ChurchTaxBP int64             // church tax on the flat tax; 0 with proof of non-membership
 }
@@ -94,45 +119,56 @@ type Day struct {
 	TaxFree    money.Cents `json:"taxFree"`
 	Taxable    money.Cents `json:"taxable"`
 	Rules      []string    `json:"rules"`
-	Warnings   []string    `json:"warnings" doc:"weekend, holiday, several_receipts, over_limit"`
+	Warnings   []string    `json:"warnings" doc:"weekend, holiday, several_receipts, over_limit, not_working_day"`
 	Holiday    string      `json:"holiday,omitempty"`
 }
 
 // Totals sum the counted days.
 type Totals struct {
-	Days       int         `json:"days"`
-	Receipts   money.Cents `json:"receipts" doc:"sum of the counted days' receipt totals"`
-	Allowance  money.Cents `json:"allowance" doc:"payout to the employee"`
-	TaxFree    money.Cents `json:"taxFree"`
-	Taxable    money.Cents `json:"taxable"`
-	FlatTax    money.Cents `json:"flatTax" doc:"model A: 25 % wage tax paid by the company"`
-	Soli       money.Cents `json:"soli"`
-	ChurchTax  money.Cents `json:"churchTax"`
-	CompanyTax money.Cents `json:"companyTax" doc:"flat tax + Soli + church tax"`
+	Days        int         `json:"days"`
+	WorkingDays int         `json:"workingDays" doc:"working days in the calendar; 0 without proof"`
+	Receipts    money.Cents `json:"receipts" doc:"sum of the counted days' receipt totals"`
+	Allowance   money.Cents `json:"allowance" doc:"payout to the employee"`
+	TaxFree     money.Cents `json:"taxFree"`
+	Taxable     money.Cents `json:"taxable"`
+	FlatTax     money.Cents `json:"flatTax" doc:"model A: 25 % wage tax paid by the company"`
+	Soli        money.Cents `json:"soli"`
+	ChurchTax   money.Cents `json:"churchTax"`
+	CompanyTax  money.Cents `json:"companyTax" doc:"flat tax + Soli + church tax"`
 }
 
 // Result is a computed month.
 type Result struct {
-	Month    string        `json:"month"`
-	Model    TaxModel      `json:"model"`
-	DayLimit int           `json:"dayLimit"`
-	Values   *rates.Values `json:"values,omitempty"`
-	Days     []Day         `json:"days"`
-	Totals   Totals        `json:"totals"`
-	Blockers []string      `json:"blockers" doc:"values_missing"`
+	Month     string        `json:"month"`
+	Model     TaxModel      `json:"model"`
+	DayLimit  int           `json:"dayLimit" doc:"0 when working days are proven"`
+	ProveDays bool          `json:"proveDays"`
+	Calendar  []CalendarDay `json:"calendar" doc:"working-day calendar; empty without proof"`
+	Values    *rates.Values `json:"values,omitempty"`
+	Days      []Day         `json:"days"`
+	Totals    Totals        `json:"totals"`
+	Blockers  []string      `json:"blockers" doc:"values_missing"`
 }
 
 // Compute calculates a month. Receipts outside the month are ignored.
 func Compute(in Input) Result {
-	res := Result{Month: in.Month, Model: in.Model, DayLimit: in.DayLimit, Values: in.Values, Days: []Day{}, Blockers: []string{}}
+	res := Result{Month: in.Month, Model: in.Model, DayLimit: in.DayLimit, ProveDays: in.ProveDays, Values: in.Values, Days: []Day{}, Calendar: []CalendarDay{}, Blockers: []string{}}
 	if res.DayLimit <= 0 {
 		res.DayLimit = DefaultDayLimit
+	}
+	if in.ProveDays {
+		res.DayLimit = 0
+		res.Calendar = calendar(in.Month, in.Marks, in.Holidays)
 	}
 	if in.Values == nil {
 		res.Blockers = append(res.Blockers, "values_missing")
 	}
 	res.Days = mealDays(in)
-	countBest(res.Days, res.DayLimit)
+	if in.ProveDays {
+		countWorking(res.Days, res.Calendar)
+	} else {
+		countBest(res.Days, res.DayLimit)
+	}
 	if in.Values != nil {
 		for i := range res.Days {
 			if res.Days[i].Counted {
@@ -141,6 +177,11 @@ func Compute(in Input) Result {
 		}
 	}
 	res.Totals = sum(res.Days, in.Model, in.ChurchTaxBP)
+	for _, c := range res.Calendar {
+		if c.Working {
+			res.Totals.WorkingDays++
+		}
+	}
 	return res
 }
 
@@ -213,6 +254,50 @@ func countBest(days []Day, limit int) {
 			days[i].Rules = append(days[i].Rules, "R4")
 		} else {
 			days[i].Warnings = append(days[i].Warnings, "over_limit")
+		}
+	}
+}
+
+// calendar lists every date of the month with its working-day status (R4):
+// Monday to Friday except holidays, changed by the employee's marks.
+func calendar(month string, marks map[string]Mark, holidays map[string]string) []CalendarDay {
+	first, err := time.Parse("2006-01", month)
+	if err != nil {
+		return []CalendarDay{}
+	}
+	out := []CalendarDay{}
+	for t := first; t.Month() == first.Month(); t = t.AddDate(0, 0, 1) {
+		date := t.Format(time.DateOnly)
+		c := CalendarDay{Date: date, Holiday: holidays[date]}
+		if m := marks[date]; m.Valid() {
+			c.Mark = m
+		}
+		weekday := t.Weekday() != time.Saturday && t.Weekday() != time.Sunday
+		switch c.Mark {
+		case Worked:
+			c.Working = true
+		case Vacation, Sick, Off:
+			c.Working = false
+		default:
+			c.Working = weekday && c.Holiday == ""
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+// countWorking counts every meal day on a proven working day (R4).
+func countWorking(days []Day, cal []CalendarDay) {
+	working := map[string]bool{}
+	for _, c := range cal {
+		working[c.Date] = c.Working
+	}
+	for i := range days {
+		if working[days[i].Date] {
+			days[i].Counted = true
+			days[i].Rules = append(days[i].Rules, "R4")
+		} else {
+			days[i].Warnings = append(days[i].Warnings, "not_working_day")
 		}
 	}
 }

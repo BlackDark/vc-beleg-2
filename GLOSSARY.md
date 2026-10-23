@@ -36,6 +36,9 @@ Breakfast, lunch or dinner. The allowance is granted for one meal per working da
 **Working day** (Arbeitstag):
 A day the employee worked, including Homeoffice. Within the 15-day simplification it is not proven individually.
 
+**Working-day calendar** (Arbeitstage):
+The proof of working days for a month: Monday to Friday except public holidays count, unless marked vacation (Urlaub), sick (Krank) or off (Frei); weekends and holidays count when marked worked (gearbeitet). With it, every meal day on a working day counts instead of the 15 best.
+
 **15-day simplification** (15-Tage-Vereinfachung):
 With at most 15 allowances in a month, working days need no proof.
 
