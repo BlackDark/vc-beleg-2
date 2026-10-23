@@ -18,7 +18,7 @@ type: Opaque
 stringData:
   MAHLZEIT_SETUP_TOKEN: "change-me"
   MAHLZEIT_OIDC_CLIENT_SECRET: "from-pocket-id"
-  ANTHROPIC_API_KEY: "sk-ant-..."
+  ANTHROPIC_API_KEY: "sk-ant-..." # or GEMINI_API_KEY / OPENAI_API_KEY, see docs/OPERATIONS.md
   MAHLZEIT_IMAP_PASSWORD: "mailbox-password"
 ---
 apiVersion: apps/v1

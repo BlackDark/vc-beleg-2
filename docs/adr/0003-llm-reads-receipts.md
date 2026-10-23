@@ -1,3 +1,3 @@
-# Claude vision reads receipts
+# An LLM reads receipts
 
-Date, total, merchant and a confidence value are extracted by the Claude API from images and PDFs; the employee checks every result before it counts. Local OCR (Tesseract) is weak on crumpled supermarket receipts. Receipt images leave the server for this; the feature can be switched off, which falls back to manual entry. When Claude declines a receipt, the API's server-side fallback answers with another model instead of failing.
+Date, total, merchant and a confidence value are extracted by an LLM from images and PDFs: Claude by default, Gemini or any OpenAI-compatible API (OpenRouter, Ollama) as an alternative, behind one interface with a shared prompt and the same plausibility checks; the employee checks every result before it counts. Local OCR (Tesseract) is weak on crumpled supermarket receipts. Receipt images leave the server for this; the feature can be switched off, which falls back to manual entry. When Claude declines a receipt, the API's server-side fallback answers with another model instead of failing.

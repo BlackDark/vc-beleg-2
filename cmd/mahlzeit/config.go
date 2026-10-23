@@ -20,22 +20,20 @@ import (
 // Config is read from MAHLZEIT_* environment variables. Secrets can also be
 // read from a file named by the variable with a _FILE suffix.
 type Config struct {
-	Listen          string
-	DataDir         string
-	BaseURL         string
-	SecureCookies   bool
-	SetupToken      string
-	PasswordLogin   bool
-	OIDC            *api.OIDCConfig
-	Typst           string
-	MaxUploadBytes  int64
-	MaxPixels       int64
-	MaxPDFPages     int
-	LogLevel        slog.Level
-	AnthropicKey    string
-	ExtractModel    string
-	ExtractFallback bool
-	Mail            *mailimport.Config
+	Listen         string
+	DataDir        string
+	BaseURL        string
+	SecureCookies  bool
+	SetupToken     string
+	PasswordLogin  bool
+	OIDC           *api.OIDCConfig
+	Typst          string
+	MaxUploadBytes int64
+	MaxPixels      int64
+	MaxPDFPages    int
+	LogLevel       slog.Level
+	Extract        ExtractConfig
+	Mail           *mailimport.Config
 }
 
 func env(name, def string) string {
@@ -119,13 +117,8 @@ func LoadConfig() (*Config, error) {
 	if c.MaxPDFPages, err = strconv.Atoi(env("MAHLZEIT_MAX_PDF_PAGES", "50")); err != nil || c.MaxPDFPages < 1 || c.MaxPDFPages > 50 {
 		errs = append(errs, errors.New("MAHLZEIT_MAX_PDF_PAGES must be between 1 and 50"))
 	}
-	if c.AnthropicKey, err = secret("ANTHROPIC_API_KEY"); err != nil {
-		errs = append(errs, err)
-	}
-	c.ExtractModel = env("MAHLZEIT_EXTRACT_MODEL", "")
-	if c.ExtractFallback, err = strconv.ParseBool(env("MAHLZEIT_EXTRACT_FALLBACK", "true")); err != nil {
-		errs = append(errs, errors.New("MAHLZEIT_EXTRACT_FALLBACK must be true or false"))
-	}
+	c.Extract, err = extractConfig()
+	errs = append(errs, err)
 	c.Mail, err = mailConfig()
 	errs = append(errs, err)
 	if err := c.LogLevel.UnmarshalText([]byte(env("MAHLZEIT_LOG_LEVEL", "info"))); err != nil {
@@ -140,6 +133,59 @@ func randomToken() string {
 		panic(err)
 	}
 	return hex.EncodeToString(b)
+}
+
+// ExtractConfig selects the LLM that reads receipts.
+type ExtractConfig struct {
+	Provider string // claude, gemini or openai
+	Enabled  bool
+	APIKey   string
+	Model    string
+	BaseURL  string
+	Fallback bool // Claude only
+}
+
+// extractConfig reads the receipt reader settings. Claude without a key
+// means no reading: date, total and merchant are typed by hand.
+func extractConfig() (ExtractConfig, error) {
+	x := ExtractConfig{
+		Provider: env("MAHLZEIT_EXTRACT_PROVIDER", "claude"),
+		Model:    env("MAHLZEIT_EXTRACT_MODEL", ""),
+		BaseURL:  env("MAHLZEIT_EXTRACT_BASE_URL", ""),
+	}
+	var errs []error
+	var err error
+	if x.Fallback, err = strconv.ParseBool(env("MAHLZEIT_EXTRACT_FALLBACK", "true")); err != nil {
+		errs = append(errs, errors.New("MAHLZEIT_EXTRACT_FALLBACK must be true or false"))
+	}
+	if x.BaseURL != "" {
+		if u, err := url.Parse(x.BaseURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("MAHLZEIT_EXTRACT_BASE_URL must be an absolute http(s) URL"))
+		}
+	}
+	keyVar := map[string]string{"claude": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY", "openai": "OPENAI_API_KEY"}[x.Provider]
+	if keyVar == "" {
+		return x, errors.Join(append(errs, errors.New("MAHLZEIT_EXTRACT_PROVIDER must be claude, gemini or openai"))...)
+	}
+	if x.APIKey, err = secret(keyVar); err != nil {
+		errs = append(errs, err)
+	}
+	switch x.Provider {
+	case "claude":
+		x.Enabled = x.APIKey != ""
+	case "gemini":
+		x.Enabled = true
+		if x.APIKey == "" {
+			errs = append(errs, errors.New("GEMINI_API_KEY is required with MAHLZEIT_EXTRACT_PROVIDER=gemini"))
+		}
+	case "openai":
+		// Local servers such as Ollama need no key.
+		x.Enabled = true
+		if x.Model == "" {
+			errs = append(errs, errors.New("MAHLZEIT_EXTRACT_MODEL is required with MAHLZEIT_EXTRACT_PROVIDER=openai"))
+		}
+	}
+	return x, errors.Join(errs...)
 }
 
 // mailConfig reads the IMAP settings; no host means no mail import.

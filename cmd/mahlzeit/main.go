@@ -19,6 +19,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anthropics/anthropic-sdk-go/option"
+
 	"github.com/blackdark/vc-beleg-2/internal/api"
 	"github.com/blackdark/vc-beleg-2/internal/app"
 	"github.com/blackdark/vc-beleg-2/internal/db"
@@ -89,10 +91,7 @@ func serve() error {
 	if err := export.ExtractFonts(fontDir); err != nil {
 		return err
 	}
-	var reader app.Extractor
-	if cfg.AnthropicKey != "" {
-		reader = extract.New(cfg.AnthropicKey, cfg.ExtractModel, cfg.ExtractFallback)
-	}
+	reader := newReader(cfg.Extract)
 	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages}, log, reader)
 	if err != nil {
 		return err
@@ -115,7 +114,7 @@ func serve() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil, "extraction", reader != nil, "mail", cfg.Mail != nil)
+	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil, "extraction", reader != nil, "provider", cfg.Extract.Provider, "mail", cfg.Mail != nil)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -232,4 +231,23 @@ func healthcheck() error {
 		return fmt.Errorf("status %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// newReader builds the configured receipt reader, or nil without one.
+func newReader(x ExtractConfig) app.Extractor {
+	if !x.Enabled {
+		return nil
+	}
+	switch x.Provider {
+	case "gemini":
+		return extract.NewGemini(x.APIKey, x.Model, x.BaseURL)
+	case "openai":
+		return extract.NewOpenAI(x.APIKey, x.Model, x.BaseURL)
+	default:
+		var opts []option.RequestOption
+		if x.BaseURL != "" {
+			opts = append(opts, option.WithBaseURL(x.BaseURL))
+		}
+		return extract.NewClaude(x.APIKey, x.Model, x.Fallback, opts...)
+	}
 }
