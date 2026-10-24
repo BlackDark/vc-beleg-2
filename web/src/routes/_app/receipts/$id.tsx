@@ -223,6 +223,8 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
               </Field>
               {r.source === "mail" ? (
                 <p className="text-xs text-muted-foreground">{m.received_by_mail({ from: r.mailFrom })}</p>
+              ) : r.source === "folder" ? (
+                <p className="text-xs text-muted-foreground">{m.received_from_folder()}</p>
               ) : null}
               {r.status === "pending" ? (
                 <div className="grid gap-2">

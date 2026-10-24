@@ -14,6 +14,7 @@ import (
 
 	"github.com/blackdark/vc-beleg-2/internal/api"
 	"github.com/blackdark/vc-beleg-2/internal/app"
+	"github.com/blackdark/vc-beleg-2/internal/folderimport"
 	"github.com/blackdark/vc-beleg-2/internal/mailimport"
 )
 
@@ -34,6 +35,7 @@ type Config struct {
 	LogLevel       slog.Level
 	Extract        ExtractConfig
 	Mail           *mailimport.Config
+	Folder         *folderimport.Config
 }
 
 func env(name, def string) string {
@@ -120,6 +122,8 @@ func LoadConfig() (*Config, error) {
 	c.Extract, err = extractConfig()
 	errs = append(errs, err)
 	c.Mail, err = mailConfig()
+	errs = append(errs, err)
+	c.Folder, err = folderConfig(c.MaxUploadBytes)
 	errs = append(errs, err)
 	if err := c.LogLevel.UnmarshalText([]byte(env("MAHLZEIT_LOG_LEVEL", "info"))); err != nil {
 		errs = append(errs, errors.New("MAHLZEIT_LOG_LEVEL must be debug, info, warn or error"))
@@ -220,4 +224,35 @@ func mailConfig() (*mailimport.Config, error) {
 		errs = append(errs, errors.New("MAHLZEIT_IMAP_ALLOWED_SENDERS is required with MAHLZEIT_IMAP_HOST"))
 	}
 	return m, errors.Join(errs...)
+}
+
+// folderConfig reads the WebDAV folder settings; no URL means no folder
+// import.
+func folderConfig(maxBytes int64) (*folderimport.Config, error) {
+	raw := env("MAHLZEIT_WEBDAV_URL", "")
+	if raw == "" {
+		return nil, nil
+	}
+	var errs []error
+	f := &folderimport.Config{
+		URL: strings.TrimRight(raw, "/"), Username: env("MAHLZEIT_WEBDAV_USERNAME", ""),
+		ProcessedFolder: strings.Trim(env("MAHLZEIT_WEBDAV_PROCESSED_FOLDER", "Verarbeitet"), "/"), MaxBytes: maxBytes,
+	}
+	if u, err := url.Parse(f.URL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_URL must be an absolute http(s) URL without credentials"))
+	}
+	var err error
+	if f.Password, err = secret("MAHLZEIT_WEBDAV_PASSWORD"); err != nil {
+		errs = append(errs, err)
+	}
+	if f.Delete, err = strconv.ParseBool(env("MAHLZEIT_WEBDAV_DELETE", "false")); err != nil {
+		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_DELETE must be true or false"))
+	}
+	if f.Interval, err = time.ParseDuration(env("MAHLZEIT_WEBDAV_INTERVAL", "5m")); err != nil || f.Interval < time.Minute {
+		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_INTERVAL must be a duration of at least 1m"))
+	}
+	if !f.Delete && (f.ProcessedFolder == "" || strings.Contains(f.ProcessedFolder, "..")) {
+		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_PROCESSED_FOLDER must name a subfolder"))
+	}
+	return f, errors.Join(errs...)
 }

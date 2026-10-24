@@ -18,7 +18,7 @@ Deviations: Go backend (Huma, code-first OpenAPI) + React SPA with a Hey API cli
 - `internal/rates/benefit-values.csv`: benefit values per year; a new year is a new row, never code.
 - `internal/holidays`: public holidays per Bundesland.
 - `internal/app`: persistence, receipts, months and reports (one account, one employee); `internal/api`: Huma operations, the OpenAPI document is generated from them; `internal/export`: Typst report template.
-- `internal/extract`: an LLM reads receipts (Claude, Gemini, OpenAI-compatible; shared prompt and checks in `extract.go`); `internal/mailimport`: IMAP polling. Both only suggest values: every receipt is checked by the user.
+- `internal/extract`: an LLM reads receipts (Claude, Gemini, OpenAI-compatible; shared prompt and checks in `extract.go`); `internal/mailimport`: IMAP polling; `internal/folderimport`: WebDAV folder polling. All only suggest values: every receipt is checked by the user.
 - `web/`: React SPA, embedded in the binary; `web/src/api/gen` is generated (`mise run gen`), never edit it. UI text in `web/messages/de.json` and `en.json` (keep both complete).
 - `docker/Dockerfile`, `.github/workflows/release.yml` (tag `v*` → GHCR image + release), `deploy/kubernetes.yaml`, [docs/OPERATIONS.md](docs/OPERATIONS.md) (all env variables).
 - Much of the server and UI is adapted from Spesen (github.com/BlackDark/vc-geschaeftsausgabentest); check there before inventing a pattern.

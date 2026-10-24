@@ -44,6 +44,14 @@ export const zExtraction = z.object({
     uncertain: z.array(z.string()).optional()
 });
 
+export const zFolderStatus = z.object({
+    enabled: z.boolean(),
+    folder: z.string(),
+    imported: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    lastError: z.string(),
+    lastRun: z.string()
+});
+
 export const zLoginBody = z.object({
     password: z.string().min(1).max(500),
     username: z.string().min(1).max(100)
@@ -99,7 +107,11 @@ export const zReceipt = z.object({
     note: z.string(),
     number: z.string(),
     pages: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    source: z.enum(['upload', 'mail']),
+    source: z.enum([
+        'upload',
+        'mail',
+        'folder'
+    ]),
     status: z.enum(['pending', 'checked']),
     total: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     warnings: z.array(z.string())
@@ -246,6 +258,11 @@ export const zCombineDayBody = zCombineBody;
  * OK
  */
 export const zCombineDayResponse = zMonth;
+
+/**
+ * OK
+ */
+export const zGetFolderStatusResponse = zFolderStatus;
 
 export const zLoginBody2 = zLoginBody;
 

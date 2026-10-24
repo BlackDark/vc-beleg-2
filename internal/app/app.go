@@ -70,6 +70,7 @@ type App struct {
 
 	extractQueue chan int64
 	mail         mailState
+	folder       folderState
 	now          func() time.Time
 }
 

@@ -4,6 +4,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/blackdark/vc-beleg-2/internal/folderimport"
 )
 
 func TestExtractConfig(t *testing.T) {
@@ -43,6 +46,45 @@ func TestExtractConfig(t *testing.T) {
 			}
 			if err != nil || got != tt.want {
 				t.Fatalf("got %+v, %v\nwant %+v", got, err, tt.want)
+			}
+		})
+	}
+}
+
+func TestFolderConfig(t *testing.T) {
+	tests := []struct {
+		name    string
+		env     map[string]string
+		wantErr string
+		check   func(*folderimport.Config) bool
+	}{
+		{"off without URL", nil, "", func(f *folderimport.Config) bool { return f == nil }},
+		{"nextcloud", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://cloud.example.com/remote.php/dav/files/max/Belege/", "MAHLZEIT_WEBDAV_USERNAME": "max", "MAHLZEIT_WEBDAV_PASSWORD": "app-pw"}, "",
+			func(f *folderimport.Config) bool {
+				return f.URL == "https://cloud.example.com/remote.php/dav/files/max/Belege" && f.Password == "app-pw" && f.ProcessedFolder == "Verarbeitet" && f.Interval == 5*time.Minute && f.MaxBytes == 1<<20
+			}},
+		{"credentials in URL", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://max:pw@cloud.example.com/dav"}, "without credentials", nil},
+		{"interval too short", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://cloud.example.com/dav", "MAHLZEIT_WEBDAV_INTERVAL": "10s"}, "at least 1m", nil},
+		{"processed folder escapes", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://cloud.example.com/dav", "MAHLZEIT_WEBDAV_PROCESSED_FOLDER": "../x"}, "subfolder", nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, k := range []string{"MAHLZEIT_WEBDAV_URL", "MAHLZEIT_WEBDAV_USERNAME", "MAHLZEIT_WEBDAV_PASSWORD", "MAHLZEIT_WEBDAV_PASSWORD_FILE", "MAHLZEIT_WEBDAV_PROCESSED_FOLDER", "MAHLZEIT_WEBDAV_DELETE", "MAHLZEIT_WEBDAV_INTERVAL"} {
+				t.Setenv(k, "") // restores the variable after the test
+				os.Unsetenv(k)
+			}
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			got, err := folderConfig(1 << 20)
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("err = %v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil || !tt.check(got) {
+				t.Fatalf("got %+v, %v", got, err)
 			}
 		})
 	}

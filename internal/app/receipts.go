@@ -30,7 +30,7 @@ type Extraction struct {
 type Receipt struct {
 	ID         int64       `json:"id"`
 	Status     string      `json:"status" enum:"pending,checked"`
-	Source     string      `json:"source" enum:"upload,mail"`
+	Source     string      `json:"source" enum:"upload,mail,folder"`
 	Number     string      `json:"number"`
 	Filename   string      `json:"filename"`
 	Mime       string      `json:"mime"`
