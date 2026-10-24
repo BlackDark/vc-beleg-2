@@ -70,6 +70,8 @@ Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a s
 
 Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<folder>`, with an app password (Settings → Security → Devices & sessions).
 
+Bitrix24: `MAHLZEIT_WEBDAV_URL=https://<portal>.bitrix24.de/company/personal/user/<id>/disk/path/<folder>`; with two-factor login, use an application password.
+
 ## Receipt reading
 
 Every new receipt is sent to the configured model, which returns date, total and merchant; the image leaves your server for this (except with a local model). Nothing counts until you check it. Rate limits and temporary API errors are retried automatically; with Claude, a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
