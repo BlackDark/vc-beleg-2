@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/emersion/go-webdav"
 	xwebdav "golang.org/x/net/webdav"
 
 	"github.com/blackdark/vc-beleg-2/internal/app"
@@ -44,7 +43,7 @@ func (f *fakeApp) Import(_ context.Context, _ *app.User, source, filename string
 
 // newDAV serves an in-memory WebDAV tree under /dav/ with basic auth and
 // returns a client for the folder /dav/Belege and its URL.
-func newDAV(t *testing.T) (*webdav.Client, xwebdav.FileSystem, string) {
+func newDAV(t *testing.T) (*Dav, xwebdav.FileSystem, string) {
 	t.Helper()
 	fs := xwebdav.NewMemFS()
 	if err := fs.Mkdir(context.Background(), "/Belege", 0o755); err != nil {
@@ -60,7 +59,7 @@ func newDAV(t *testing.T) (*webdav.Client, xwebdav.FileSystem, string) {
 	}))
 	t.Cleanup(srv.Close)
 	url := srv.URL + "/dav/Belege"
-	c, err := webdav.NewClient(webdav.HTTPClientWithBasicAuth(nil, "max", "secret"), url)
+	c, err := NewDav(url, "max", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +106,7 @@ func TestPollMovesProcessedFiles(t *testing.T) {
 	now := time.Now().Add(2 * time.Minute) // files are settled
 	a := &fakeApp{}
 
-	res, err := Poll(context.Background(), cfg, c, a, now, quiet)
+	res, err := Poll(context.Background(), cfg, c, a, NewTracker(), now, quiet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,10 +132,10 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 	a := &fakeApp{seen: map[string]bool{"again": true}}
 
 	// Just written: nothing happens yet.
-	if res, err := Poll(context.Background(), cfg, c, a, time.Now(), quiet); err != nil || res.Imported != 0 || len(names(t, fs, "/Belege")) != 3 {
+	if res, err := Poll(context.Background(), cfg, c, a, NewTracker(), time.Now(), quiet); err != nil || res.Imported != 0 || len(names(t, fs, "/Belege")) != 3 {
 		t.Fatalf("unsettled: %+v %v", res, err)
 	}
-	res, err := Poll(context.Background(), cfg, c, a, time.Now().Add(2*time.Minute), quiet)
+	res, err := Poll(context.Background(), cfg, c, a, NewTracker(), time.Now().Add(2*time.Minute), quiet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,11 +151,11 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 func TestPollReportsWrongPassword(t *testing.T) {
 	_, fs, url := newDAV(t)
 	put(t, fs, "/Belege/a.jpg", "jpeg")
-	bad, err := webdav.NewClient(webdav.HTTPClientWithBasicAuth(nil, "max", "wrong"), url)
+	bad, err := NewDav(url, "max", "wrong")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Poll(context.Background(), Config{MaxBytes: 1}, bad, &fakeApp{}, time.Now(), quiet); err == nil || !strings.Contains(err.Error(), "list folder") {
+	if _, err := Poll(context.Background(), Config{MaxBytes: 1}, bad, &fakeApp{}, NewTracker(), time.Now(), quiet); err == nil || !strings.Contains(err.Error(), "list folder") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -164,5 +163,91 @@ func TestPollReportsWrongPassword(t *testing.T) {
 func TestRedact(t *testing.T) {
 	if got := Redact("https://max:secret@cloud.example.com/remote.php/dav/files/max/Belege"); got != "https://cloud.example.com/remote.php/dav/files/max/Belege" {
 		t.Fatalf("redact = %q", got)
+	}
+}
+
+// bitrixLike answers PROPFIND like Bitrix24: absolute hrefs, the folder
+// itself and a subfolder without getcontentlength (404 propstat), a file
+// without length and date.
+func bitrixLike(t *testing.T, moved *[]string) string {
+	t.Helper()
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		base := "/company/personal/user/1/disk/path/Zulagen/"
+		switch r.Method {
+		case "PROPFIND":
+			if r.URL.Path != base || r.Header.Get("Depth") != "1" {
+				t.Errorf("PROPFIND %s depth %q", r.URL.Path, r.Header.Get("Depth"))
+			}
+			w.WriteHeader(http.StatusMultiStatus)
+			missing := `<d:propstat><d:prop><d:getcontentlength/></d:prop><d:status>HTTP/1.1 404 Not Found</d:status></d:propstat>`
+			io.WriteString(w, `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:">`+
+				`<d:response><d:href>`+srv.URL+`/company/personal/user/1/disk/path/Zulagen</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
+				`<d:response><d:href>`+base+`Verarbeitet</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
+				`<d:response><d:href>`+base+`Kassenbon%20M%C3%A4rz.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
+				// Entries outside the watched folder must never be requested.
+				`<d:response><d:href>https://elsewhere.example/steal.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`+
+				`<d:response><d:href>/company/personal/user/1/disk/path/Zulagen-alt/x.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`+
+				`</d:multistatus>`)
+		case http.MethodGet:
+			if r.URL.Path != base+"Kassenbon März.jpg" {
+				t.Errorf("GET %s", r.URL.Path)
+			}
+			io.WriteString(w, "jpeg")
+		case "MKCOL":
+			w.WriteHeader(http.StatusMethodNotAllowed) // exists
+		case "MOVE":
+			*moved = append(*moved, r.URL.Path+" -> "+r.Header.Get("Destination")+" overwrite="+r.Header.Get("Overwrite"))
+			w.WriteHeader(http.StatusCreated)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL + "/company/personal/user/1/disk/path/Zulagen"
+}
+
+func TestPollToleratesMissingProperties(t *testing.T) {
+	var moved []string
+	url := bitrixLike(t, &moved)
+	c, err := NewDav(url, "max", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &fakeApp{}
+	now := time.Date(2026, 10, 24, 17, 30, 0, 0, time.UTC)
+	cfg := Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}
+	tr := NewTracker()
+	// Without a date, the first sighting only starts the settle time.
+	if res, err := Poll(context.Background(), cfg, c, a, tr, now.Add(-2*time.Minute), quiet); err != nil || res.Imported != 0 {
+		t.Fatalf("first poll: %+v %v", res, err)
+	}
+	res, err := Poll(context.Background(), cfg, c, a, tr, now, quiet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Imported != 1 || !slices.Equal(a.imported, []string{"Kassenbon März.jpg"}) {
+		t.Fatalf("result = %+v, imported %v", res, a.imported)
+	}
+	want := "/company/personal/user/1/disk/path/Zulagen/Kassenbon März.jpg -> " + url + "/Verarbeitet/20261024-173000-Kassenbon%20M%C3%A4rz.jpg overwrite=F"
+	if len(moved) != 1 || moved[0] != want {
+		t.Fatalf("moved = %v\nwant %s", moved, want)
+	}
+}
+
+func TestTrackerWaitsForUndatedFiles(t *testing.T) {
+	tr := NewTracker()
+	t0 := time.Date(2026, 10, 24, 18, 0, 0, 0, time.UTC)
+	f := Entry{Href: "https://dav/x.jpg", Size: 10}
+	if tr.settled(f, t0) || tr.settled(f, t0.Add(30*time.Second)) {
+		t.Fatal("settled too early")
+	}
+	f.Size = 20 // still growing: the clock restarts
+	if tr.settled(f, t0.Add(2*time.Minute)) || !tr.settled(f, t0.Add(3*time.Minute)) {
+		t.Fatal("growing file")
+	}
+	dated := Entry{Href: "https://dav/y.jpg", ModTime: t0}
+	if tr.settled(dated, t0.Add(30*time.Second)) || !tr.settled(dated, t0.Add(time.Minute)) {
+		t.Fatal("dated file")
 	}
 }
