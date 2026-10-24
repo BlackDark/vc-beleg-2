@@ -66,4 +66,9 @@ test("setup, receipts, check, close month and download the report", async ({ pag
 
   await page.goto("/reports");
   await expect(page.getByText(/v1 ·/)).toBeVisible();
+
+  // The three uploads are in the import log.
+  await page.goto("/settings");
+  await expect(page.getByText("Import-Protokoll")).toBeVisible();
+  await expect(page.getByText("importiert")).toHaveCount(3);
 });

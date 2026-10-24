@@ -13,6 +13,7 @@ import {
 } from "@/api/gen/@tanstack/react-query.gen";
 import type { Settings } from "@/api/gen/types.gen";
 import { Money, PageHeader, taxModelText } from "@/components/common";
+import { ImportLogCard } from "@/components/import-log";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
@@ -56,6 +57,9 @@ function SettingsPage() {
           <MailCard />
           <FolderCard />
           <RatesCard />
+        </div>
+        <div className="lg:col-span-2">
+          <ImportLogCard />
         </div>
       </div>
     </>

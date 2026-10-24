@@ -203,5 +203,13 @@
   "err_oidc_not_allowed": "This identity may not log in.",
   "err_oidc_other_identity": "The account is linked to another identity.",
   "err_oidc_failed": "Login at the identity provider failed.",
-  "err_oidc_unavailable": "The identity provider is unreachable."
+  "err_oidc_unavailable": "The identity provider is unreachable.",
+  "settings_import_log": "Import log",
+  "settings_import_log_text": "What happened to uploaded, mailed and folder files and to receipt reading (90 days).",
+  "log_empty": "No entries yet.",
+  "log_imported": "imported",
+  "log_duplicate": "already there",
+  "log_rejected": "rejected",
+  "log_read": "read",
+  "log_read_failed": "reading failed"
 }

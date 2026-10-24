@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -62,10 +63,12 @@ func (a *App) RetryExtraction(ctx context.Context, u *User, id int64) (*Receipt,
 }
 
 func (a *App) extractOne(ctx context.Context, id int64) {
-	var key, mime string
-	if err := a.DB.QueryRowContext(ctx, `SELECT storage_key, mime FROM receipts WHERE id = ? AND extraction = 'pending'`, id).Scan(&key, &mime); err != nil {
+	var key, mime, filename string
+	var employee int64
+	if err := a.DB.QueryRowContext(ctx, `SELECT storage_key, mime, filename, employee_id FROM receipts WHERE id = ? AND extraction = 'pending'`, id).Scan(&key, &mime, &filename, &employee); err != nil {
 		return
 	}
+	owner := &User{EmployeeID: employee}
 	data, err := a.Files.Read(key)
 	if err != nil {
 		a.Log.Error("extraction: read file", "receipt", id, "err", err)
@@ -83,11 +86,15 @@ func (a *App) extractOne(ctx context.Context, id int64) {
 			return // shutting down; stays pending
 		}
 		a.Log.Warn("extraction failed", "receipt", id, "reader", a.Cfg.ReaderLabel, "took", took.String(), "err", err)
+		a.Record(ctx, owner, LogEntry{Source: "reader", Filename: filename, Outcome: "read_failed", ReceiptID: id,
+			Message: a.Cfg.ReaderLabel + " · " + took.String() + " · " + err.Error()})
 		state, ex = "failed", Extraction{Error: err.Error()}
 	} else {
 		// Which fields were found, never their values.
 		a.Log.Info("extraction done", "receipt", id, "took", took.String(),
 			"date", ex.Date != "", "total", ex.Total > 0, "merchant", ex.Merchant != "", "uncertain", ex.Uncertain)
+		a.Record(ctx, owner, LogEntry{Source: "reader", Filename: filename, Outcome: "read", ReceiptID: id,
+			Message: a.Cfg.ReaderLabel + " · " + took.String() + " · " + foundFields(ex)})
 	}
 	b, _ := json.Marshal(ex)
 	// Fill only what the employee has not entered meanwhile; checked
@@ -100,4 +107,22 @@ func (a *App) extractOne(ctx context.Context, id int64) {
 	if err != nil {
 		a.Log.Error("extraction: save", "receipt", id, "err", err)
 	}
+}
+
+// foundFields names what a reading found, for the import log.
+func foundFields(ex Extraction) string {
+	var found []string
+	if ex.Date != "" {
+		found = append(found, "date")
+	}
+	if ex.Total > 0 {
+		found = append(found, "total")
+	}
+	if ex.Merchant != "" {
+		found = append(found, "merchant")
+	}
+	if len(found) == 0 {
+		return "nothing found"
+	}
+	return "found: " + strings.Join(found, ", ")
 }

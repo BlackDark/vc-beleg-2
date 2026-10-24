@@ -49,4 +49,12 @@ func (s *Server) registerProfile(api huma.API) {
 		func(ctx context.Context, u *app.User, _ *empty) (*body[app.FolderStatus], error) {
 			return wrap(s.app.FolderStatus(), nil)
 		})
+	authed(s, api, huma.Operation{OperationID: "getImportLog", Method: http.MethodGet, Path: "/api/import-log", Tags: tags, Summary: "Latest import and receipt reading events"},
+		func(ctx context.Context, u *app.User, in *importLogQuery) (*body[[]app.LogEntry], error) {
+			return wrap(s.app.ImportLog(ctx, u, in.Limit))
+		})
+}
+
+type importLogQuery struct {
+	Limit int `query:"limit" minimum:"1" maximum:"200" default:"50"`
 }

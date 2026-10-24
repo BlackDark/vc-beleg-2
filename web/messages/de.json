@@ -203,5 +203,13 @@
   "err_oidc_not_allowed": "Diese Identität darf sich nicht anmelden.",
   "err_oidc_other_identity": "Das Konto ist mit einer anderen Identität verknüpft.",
   "err_oidc_failed": "Die Anmeldung beim Identity Provider ist fehlgeschlagen.",
-  "err_oidc_unavailable": "Der Identity Provider ist nicht erreichbar."
+  "err_oidc_unavailable": "Der Identity Provider ist nicht erreichbar.",
+  "settings_import_log": "Import-Protokoll",
+  "settings_import_log_text": "Was mit hochgeladenen, gemailten und aus dem Ordner geholten Dateien und beim Auslesen passiert ist (90 Tage).",
+  "log_empty": "Noch keine Einträge.",
+  "log_imported": "importiert",
+  "log_duplicate": "schon vorhanden",
+  "log_rejected": "abgelehnt",
+  "log_read": "ausgelesen",
+  "log_read_failed": "Auslesen fehlgeschlagen"
 }

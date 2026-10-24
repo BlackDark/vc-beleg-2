@@ -29,7 +29,10 @@ _Avoid_: approved, valid
 Receipts taken from attachments of mails sent to the dedicated mailbox by an allowed sender.
 
 **Folder import** (Ordner-Import):
-Receipts taken from image and PDF files placed in a watched WebDAV folder; processed files are moved to a subfolder.
+Receipts taken from image and PDF files placed in a watched WebDAV folder; imported files move to one subfolder, rejected files to another.
+
+**Import log** (Import-Protokoll):
+What happened to each incoming file (imported, already there, rejected with reason) and each receipt reading, kept 90 days.
 
 ### Calculation
 

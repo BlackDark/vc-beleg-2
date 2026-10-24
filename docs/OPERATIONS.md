@@ -36,7 +36,8 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_IMAP_INTERVAL` | `5m` | Polling interval (at least `1m`). |
 | `MAHLZEIT_WEBDAV_URL` | – | Enables the folder import: WebDAV URL of the watched folder, without credentials. See [Folder import](#folder-import-webdav). |
 | `MAHLZEIT_WEBDAV_USERNAME` / `_PASSWORD` | – | WebDAV credentials; use an app password. |
-| `MAHLZEIT_WEBDAV_PROCESSED_FOLDER` | `Verarbeitet` | Subfolder processed files are moved to (created if missing). |
+| `MAHLZEIT_WEBDAV_PROCESSED_FOLDER` | `Verarbeitet` | Subfolder imported files are moved to (created if missing). |
+| `MAHLZEIT_WEBDAV_FAILED_FOLDER` | `Fehlgeschlagen` | Subfolder rejected files are moved to, also with `MAHLZEIT_WEBDAV_DELETE`; drop a file back into the folder to try again. |
 | `MAHLZEIT_WEBDAV_DELETE` | `false` | Delete processed files instead of moving them. |
 | `MAHLZEIT_WEBDAV_INTERVAL` | `5m` | Polling interval (at least `1m`). |
 | `MAHLZEIT_WEBDAV_USER_AGENT` | `Microsoft-WebDAV-MiniRedir/…` | Client name sent to the server. Bitrix24 serves files only to WebDAV clients it knows; change it only if a server needs another one. |
@@ -67,7 +68,7 @@ Use a dedicated mailbox. Send receipts as attachments or inline photos (JPEG, PN
 
 ## Folder import (WebDAV)
 
-Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a scanner app on your phone. Every few minutes Mahlzeit imports the JPEG, PNG and PDF files in it (not in subfolders) as receipts to check and moves them to `Verarbeitet/` with a time stamp in the name. Files younger than a minute are left for the next run, so uploads in progress are not read half-written; if the server reports no date, a file waits until a later run sees it unchanged. Other files stay untouched. A file Mahlzeit cannot read (or larger than the upload limit) is moved too and named in Settings → Ordner-Import, which also shows the last run.
+Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a scanner app on your phone. Every few minutes Mahlzeit imports the JPEG, PNG and PDF files in it (not in subfolders) as receipts to check and moves them to `Verarbeitet/` with a time stamp in the name. Files younger than a minute are left for the next run, so uploads in progress are not read half-written; if the server reports no date, a file waits until a later run sees it unchanged. Other files stay untouched. A file Mahlzeit cannot read (or larger than the upload limit) moves to `Fehlgeschlagen/` instead; Settings → Ordner-Import names it and shows the last run.
 
 Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<folder>`, with an app password (Settings → Security → Devices & sessions).
 
@@ -82,7 +83,7 @@ kubectl exec deploy/mahlzeit -- mahlzeit check folder        # what the next fol
 kubectl exec deploy/mahlzeit -- mahlzeit check ai /tmp/bon.jpg # read one receipt with the configured provider and model
 ```
 
-The log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
+Settings → Import-Protokoll lists the last 90 days: every uploaded, mailed or folder file (imported, already there, or rejected with the reason) and every receipt reading (provider, model, duration, fields found, or the error). The server log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
 
 ## Receipt reading
 
