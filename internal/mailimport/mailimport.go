@@ -143,6 +143,7 @@ func importMail(ctx context.Context, a *app.App, u *app.User, cfg Config, m *Mai
 	log.Info("mail import: mail", "attachments", len(m.Attachments))
 	if !Allowed(cfg.AllowedSenders, m.From) {
 		log.Info("mail import: sender not allowed", "from", m.From)
+		a.Record(ctx, u, app.LogEntry{Source: "mail", Filename: m.Subject, Outcome: "rejected", Message: "sender not allowed: " + m.From})
 		return 0
 	}
 	if done, err := a.MailImported(ctx, u, m.MessageID); err != nil || done {

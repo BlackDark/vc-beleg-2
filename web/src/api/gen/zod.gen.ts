@@ -52,6 +52,27 @@ export const zFolderStatus = z.object({
     lastRun: z.string()
 });
 
+export const zLogEntry = z.object({
+    at: z.string(),
+    filename: z.string(),
+    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    message: z.string(),
+    outcome: z.enum([
+        'imported',
+        'duplicate',
+        'rejected',
+        'read',
+        'read_failed'
+    ]),
+    receiptId: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    source: z.enum([
+        'upload',
+        'mail',
+        'folder',
+        'reader'
+    ])
+});
+
 export const zLoginBody = z.object({
     password: z.string().min(1).max(500),
     username: z.string().min(1).max(100)
@@ -263,6 +284,15 @@ export const zCombineDayResponse = zMonth;
  * OK
  */
 export const zGetFolderStatusResponse = zFolderStatus;
+
+export const zGetImportLogQuery = z.object({
+    limit: z.coerce.bigint().gte(BigInt(1)).lte(BigInt(200)).optional().default(BigInt(50))
+});
+
+/**
+ * OK
+ */
+export const zGetImportLogResponse = z.array(zLogEntry);
 
 export const zLoginBody2 = zLoginBody;
 

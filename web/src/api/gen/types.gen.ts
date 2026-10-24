@@ -83,6 +83,22 @@ export type FolderStatus = {
     lastRun: string;
 };
 
+export type LogEntry = {
+    at: string;
+    filename: string;
+    id: number;
+    /**
+     * reason, or reader and duration
+     */
+    message: string;
+    outcome: 'imported' | 'duplicate' | 'rejected' | 'read' | 'read_failed';
+    /**
+     * 0 when no receipt was created
+     */
+    receiptId: number;
+    source: 'upload' | 'mail' | 'folder' | 'reader';
+};
+
 export type LoginBody = {
     password: string;
     username: string;
@@ -355,6 +371,33 @@ export type GetFolderStatusResponses = {
 };
 
 export type GetFolderStatusResponse = GetFolderStatusResponses[keyof GetFolderStatusResponses];
+
+export type GetImportLogData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/import-log';
+};
+
+export type GetImportLogErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetImportLogError = GetImportLogErrors[keyof GetImportLogErrors];
+
+export type GetImportLogResponses = {
+    /**
+     * OK
+     */
+    200: Array<LogEntry>;
+};
+
+export type GetImportLogResponse = GetImportLogResponses[keyof GetImportLogResponses];
 
 export type LoginData = {
     body: LoginBody;

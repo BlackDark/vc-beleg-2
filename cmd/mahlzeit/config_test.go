@@ -61,7 +61,7 @@ func TestFolderConfig(t *testing.T) {
 		{"off without URL", nil, "", func(f *folderimport.Config) bool { return f == nil }},
 		{"nextcloud", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://cloud.example.com/remote.php/dav/files/max/Belege/", "MAHLZEIT_WEBDAV_USERNAME": "max", "MAHLZEIT_WEBDAV_PASSWORD": "app-pw"}, "",
 			func(f *folderimport.Config) bool {
-				return f.URL == "https://cloud.example.com/remote.php/dav/files/max/Belege" && f.Password == "app-pw" && f.ProcessedFolder == "Verarbeitet" && f.Interval == 5*time.Minute && f.MaxBytes == 1<<20
+				return f.URL == "https://cloud.example.com/remote.php/dav/files/max/Belege" && f.Password == "app-pw" && f.ProcessedFolder == "Verarbeitet" && f.FailedFolder == "Fehlgeschlagen" && f.Interval == 5*time.Minute && f.MaxBytes == 1<<20
 			}},
 		{"credentials in URL", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://max:pw@cloud.example.com/dav"}, "without credentials", nil},
 		{"interval too short", map[string]string{"MAHLZEIT_WEBDAV_URL": "https://cloud.example.com/dav", "MAHLZEIT_WEBDAV_INTERVAL": "10s"}, "at least 1m", nil},

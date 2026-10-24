@@ -22,6 +22,11 @@ import (
 type fakeApp struct {
 	imported []string
 	seen     map[string]bool
+	logged   []string // outcome:filename
+}
+
+func (f *fakeApp) Record(_ context.Context, _ *app.User, e app.LogEntry) {
+	f.logged = append(f.logged, e.Outcome+":"+e.Filename)
 }
 
 func (f *fakeApp) Account(context.Context) (*app.User, error) { return &app.User{ID: 1}, nil }
@@ -102,7 +107,7 @@ func TestPollMovesProcessedFiles(t *testing.T) {
 	put(t, fs, "/Belege/scan.pdf", "pdf")
 	put(t, fs, "/Belege/kaputt.png", "bad png")
 	put(t, fs, "/Belege/notes.txt", "keep me")
-	cfg := Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}
+	cfg := Config{ProcessedFolder: "Verarbeitet", FailedFolder: "Fehlgeschlagen", MaxBytes: 1 << 20}
 	now := time.Now().Add(2 * time.Minute) // files are settled
 	a := &fakeApp{}
 
@@ -115,11 +120,14 @@ func TestPollMovesProcessedFiles(t *testing.T) {
 		t.Fatalf("result = %+v, imported %v", res, a.imported)
 	}
 	stamp := now.Format("20060102-150405") + "-"
-	if got := names(t, fs, "/Belege"); !slices.Equal(got, []string{"Verarbeitet", "notes.txt"}) {
+	if got := names(t, fs, "/Belege"); !slices.Equal(got, []string{"Fehlgeschlagen", "Verarbeitet", "notes.txt"}) {
 		t.Fatalf("folder = %v", got)
 	}
-	if got := names(t, fs, "/Belege/Verarbeitet"); !slices.Equal(got, []string{stamp + "bon 1.JPG", stamp + "kaputt.png", stamp + "scan.pdf"}) {
+	if got := names(t, fs, "/Belege/Verarbeitet"); !slices.Equal(got, []string{stamp + "bon 1.JPG", stamp + "scan.pdf"}) {
 		t.Fatalf("processed = %v", got)
+	}
+	if got := names(t, fs, "/Belege/Fehlgeschlagen"); !slices.Equal(got, []string{stamp + "kaputt.png"}) {
+		t.Fatalf("failed = %v", got)
 	}
 }
 
@@ -128,7 +136,7 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 	put(t, fs, "/Belege/neu.jpg", "fresh")
 	put(t, fs, "/Belege/alt.jpg", "again")
 	put(t, fs, "/Belege/gross.pdf", strings.Repeat("x", 200))
-	cfg := Config{Delete: true, MaxBytes: 100}
+	cfg := Config{Delete: true, FailedFolder: "Fehlgeschlagen", MaxBytes: 100}
 	a := &fakeApp{seen: map[string]bool{"again": true}}
 
 	// Just written: nothing happens yet.
@@ -139,12 +147,17 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The duplicate counts as done; the oversized file is rejected; all go.
+	// The duplicate counts as done and is deleted with the import; the
+	// oversized file is kept in the failed folder even in delete mode.
 	if res.Imported != 2 || !slices.Equal(a.imported, []string{"neu.jpg"}) || !slices.Equal(res.Rejected, []string{"gross.pdf (larger than the upload limit)"}) {
 		t.Fatalf("result = %+v, imported %v", res, a.imported)
 	}
-	if got := names(t, fs, "/Belege"); len(got) != 0 {
+	if got := names(t, fs, "/Belege"); !slices.Equal(got, []string{"Fehlgeschlagen"}) {
 		t.Fatalf("folder = %v", got)
+	}
+	slices.Sort(a.logged)
+	if !slices.Equal(a.logged, []string{"duplicate:alt.jpg", "rejected:gross.pdf"}) {
+		t.Fatalf("log = %v", a.logged)
 	}
 }
 
@@ -222,7 +235,7 @@ func TestPollToleratesMissingProperties(t *testing.T) {
 	}
 	a := &fakeApp{}
 	now := time.Date(2026, 10, 24, 17, 30, 0, 0, time.UTC)
-	cfg := Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}
+	cfg := Config{ProcessedFolder: "Verarbeitet", FailedFolder: "Fehlgeschlagen", MaxBytes: 1 << 20}
 	tr := NewTracker()
 	// Without a date, the first sighting only starts the settle time.
 	if res, err := Poll(context.Background(), cfg, c, a, tr, now.Add(-2*time.Minute), quiet); err != nil || res.Imported != 0 {
@@ -279,7 +292,7 @@ func TestPollKeepsFileWhenServerAnswersWithWebPage(t *testing.T) {
 	defer srv.Close()
 	c, _ := NewDav(srv.URL+"/dav", "max", "secret", "")
 	a := &fakeApp{}
-	_, err := Poll(context.Background(), Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}, c, a, NewTracker(), time.Now(), quiet)
+	_, err := Poll(context.Background(), Config{ProcessedFolder: "Verarbeitet", FailedFolder: "Fehlgeschlagen", MaxBytes: 1 << 20}, c, a, NewTracker(), time.Now(), quiet)
 	if err == nil || !strings.Contains(err.Error(), "web page") || len(a.imported) != 0 || slices.Contains(moved, "MOVE") {
 		t.Fatalf("err = %v, imported %v, requests %v", err, a.imported, moved)
 	}

@@ -75,6 +75,12 @@ func detect(b []byte) (string, string, bool) {
 
 // Import stores an original receipt file as pending and queues extraction.
 func (a *App) Import(ctx context.Context, u *User, source, filename string, data []byte, note string, mail *MailMeta) (*Receipt, error) {
+	r, err := a.importFile(ctx, u, source, filename, data, note, mail)
+	a.recordImport(ctx, u, source, filename, r, err)
+	return r, err
+}
+
+func (a *App) importFile(ctx context.Context, u *User, source, filename string, data []byte, note string, mail *MailMeta) (*Receipt, error) {
 	if int64(len(data)) > a.Cfg.MaxUploadBytes {
 		return nil, Invalid("upload.too_large", "file exceeds the size limit", "limitMb", fmt.Sprint(a.Cfg.MaxUploadBytes>>20))
 	}

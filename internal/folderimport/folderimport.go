@@ -23,7 +23,8 @@ type Config struct {
 	URL             string // WebDAV URL of the folder
 	Username        string
 	Password        string
-	ProcessedFolder string // subfolder of URL for processed files
+	ProcessedFolder string // subfolder of URL for imported files
+	FailedFolder    string // subfolder of URL for rejected files
 	Delete          bool   // delete processed files instead of moving them
 	Interval        time.Duration
 	MaxBytes        int64
@@ -42,6 +43,7 @@ type target interface {
 	Account(ctx context.Context) (*app.User, error)
 	FileImported(ctx context.Context, u *app.User, data []byte) (bool, error)
 	Import(ctx context.Context, u *app.User, source, filename string, data []byte, note string, mail *app.MailMeta) (*app.Receipt, error)
+	Record(ctx context.Context, u *app.User, e app.LogEntry)
 }
 
 // folder is the part of the WebDAV client the importer needs.
@@ -151,6 +153,7 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 		// up when moving.
 		_ = f.Mkdir(ctx, cfg.ProcessedFolder)
 	}
+	_ = f.Mkdir(ctx, cfg.FailedFolder)
 	for _, fi := range files {
 		if ctx.Err() != nil {
 			return res, nil
@@ -165,7 +168,7 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 		} else {
 			res.Rejected = append(res.Rejected, name+" ("+reason+")")
 		}
-		if err := finish(ctx, cfg, f, fi, now); err != nil {
+		if err := finish(ctx, cfg, f, fi, reason != "", now); err != nil {
 			return res, err
 		}
 		tr.forget(fi.Href)
@@ -206,6 +209,7 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 	const limit = "larger than the upload limit"
 	if fi.Size > cfg.MaxBytes {
 		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", fi.Size)
+		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit})
 		return limit, nil
 	}
 	r, err := f.Open(ctx, fi.Href)
@@ -219,9 +223,13 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 	}
 	if int64(len(data)) > cfg.MaxBytes {
 		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", len(data), "detected", http.DetectContentType(data))
+		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit})
 		return limit, nil // the server did not report the size
 	}
 	if done, err := t.FileImported(ctx, u, data); err != nil || done {
+		if done {
+			t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "duplicate", Message: "already imported; moved again"})
+		}
 		return "", err
 	}
 	_, err = t.Import(ctx, u, "folder", fi.Name, data, "", nil)
@@ -237,15 +245,21 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 }
 
 // finish deletes the file or moves it to the processed folder under a
-// time-stamped name, so files with the same name do not collide.
-func finish(ctx context.Context, cfg Config, f folder, fi Entry, now time.Time) error {
-	if cfg.Delete {
+// finish deletes an imported file or moves it to the processed folder; a
+// rejected file always moves to the failed folder, so it can be looked at
+// and dropped back in. Names get a time stamp so files do not collide.
+func finish(ctx context.Context, cfg Config, f folder, fi Entry, rejected bool, now time.Time) error {
+	if cfg.Delete && !rejected {
 		if err := f.Delete(ctx, fi.Href); err != nil {
 			return fmt.Errorf("delete %s: %w", fi.Name, err)
 		}
 		return nil
 	}
-	dest := path.Join(cfg.ProcessedFolder, now.Format("20060102-150405")+"-"+fi.Name)
+	dir := cfg.ProcessedFolder
+	if rejected {
+		dir = cfg.FailedFolder
+	}
+	dest := path.Join(dir, now.Format("20060102-150405")+"-"+fi.Name)
 	if err := f.Move(ctx, fi.Href, dest); err != nil {
 		return fmt.Errorf("move %s: %w", fi.Name, err)
 	}

@@ -201,6 +201,59 @@
         ],
         "type": "object"
       },
+      "LogEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "message": {
+            "description": "reason, or reader and duration",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "imported",
+              "duplicate",
+              "rejected",
+              "read",
+              "read_failed"
+            ],
+            "type": "string"
+          },
+          "receiptId": {
+            "description": "0 when no receipt was created",
+            "format": "int64",
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "upload",
+              "mail",
+              "folder",
+              "reader"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "source",
+          "filename",
+          "outcome",
+          "message",
+          "receiptId"
+        ],
+        "type": "object"
+      },
       "LoginBody": {
         "additionalProperties": false,
         "properties": {
@@ -993,6 +1046,59 @@
           }
         ],
         "summary": "State of the folder import",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/import-log": {
+      "get": {
+        "operationId": "getImportLog",
+        "parameters": [
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "format": "int64",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LogEntry"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Latest import and receipt reading events",
         "tags": [
           "profile"
         ]

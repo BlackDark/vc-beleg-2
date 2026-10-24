@@ -237,7 +237,8 @@ func folderConfig(maxBytes int64) (*folderimport.Config, error) {
 	f := &folderimport.Config{
 		URL: strings.TrimRight(raw, "/"), Username: env("MAHLZEIT_WEBDAV_USERNAME", ""),
 		ProcessedFolder: strings.Trim(env("MAHLZEIT_WEBDAV_PROCESSED_FOLDER", "Verarbeitet"), "/"), MaxBytes: maxBytes,
-		UserAgent: env("MAHLZEIT_WEBDAV_USER_AGENT", ""),
+		UserAgent:    env("MAHLZEIT_WEBDAV_USER_AGENT", ""),
+		FailedFolder: strings.Trim(env("MAHLZEIT_WEBDAV_FAILED_FOLDER", "Fehlgeschlagen"), "/"),
 	}
 	if u, err := url.Parse(f.URL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
 		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_URL must be an absolute http(s) URL without credentials"))
@@ -254,6 +255,9 @@ func folderConfig(maxBytes int64) (*folderimport.Config, error) {
 	}
 	if !f.Delete && (f.ProcessedFolder == "" || strings.Contains(f.ProcessedFolder, "..")) {
 		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_PROCESSED_FOLDER must name a subfolder"))
+	}
+	if f.FailedFolder == "" || strings.Contains(f.FailedFolder, "..") {
+		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_FAILED_FOLDER must name a subfolder"))
 	}
 	return f, errors.Join(errs...)
 }
