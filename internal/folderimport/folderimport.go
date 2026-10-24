@@ -86,6 +86,7 @@ func (t *Tracker) forget(href string) { delete(t.seen, href) }
 type Result struct {
 	Imported int
 	Rejected []string // files moved away without a receipt (invalid, too large)
+	Waiting  int      // receipt files not settled yet
 }
 
 // Run polls until ctx ends.
@@ -118,6 +119,9 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 		if err != nil && ctx.Err() == nil {
 			log.Warn("folder import failed", "err", err)
 		}
+		if res.Imported+len(res.Rejected)+res.Waiting > 0 {
+			log.Info("folder import run", "imported", res.Imported, "rejected", len(res.Rejected), "waiting", res.Waiting)
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -136,7 +140,8 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 	if err != nil {
 		return res, err
 	}
-	files, err := candidates(ctx, f, tr, now)
+	files, waiting, err := candidates(ctx, f, tr, now)
+	res.Waiting = waiting
 	if err != nil || len(files) == 0 {
 		return res, err
 	}
@@ -168,20 +173,29 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 }
 
 // candidates lists the receipt files that are no longer being written.
-func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]Entry, error) {
+// It also counts receipt files left for a later run.
+func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]Entry, int, error) {
 	list, err := f.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list folder: %w", err)
+		return nil, 0, fmt.Errorf("list folder: %w", err)
 	}
 	var out []Entry
+	waiting := 0
 	for _, fi := range list {
-		ext := strings.ToLower(path.Ext(fi.Name))
-		if fi.IsDir || !receiptExts[ext] || !tr.settled(fi, now) {
+		if !isReceiptFile(fi) {
+			continue
+		}
+		if !tr.settled(fi, now) {
+			waiting++
 			continue
 		}
 		out = append(out, fi)
 	}
-	return out, nil
+	return out, waiting, nil
+}
+
+func isReceiptFile(fi Entry) bool {
+	return !fi.IsDir && receiptExts[strings.ToLower(path.Ext(fi.Name))]
 }
 
 // importFile reads one file and imports it unless the same content came

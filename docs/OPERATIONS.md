@@ -72,6 +72,17 @@ Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<fold
 
 Bitrix24: `MAHLZEIT_WEBDAV_URL=https://<portal>.bitrix24.de/company/personal/user/<id>/disk/path/<folder>`; with two-factor login, use an application password.
 
+## Checking the setup
+
+Two commands test the live configuration without changing anything:
+
+```sh
+kubectl exec deploy/mahlzeit -- mahlzeit check folder        # what the next folder import would do with each file
+kubectl exec deploy/mahlzeit -- mahlzeit check ai /tmp/bon.jpg # read one receipt with the configured provider and model
+```
+
+The log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
+
 ## Receipt reading
 
 Every new receipt is sent to the configured model, which returns date, total and merchant; the image leaves your server for this (except with a local model). Nothing counts until you check it. Rate limits and temporary API errors are retried automatically; with Claude, a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.

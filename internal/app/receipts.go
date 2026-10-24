@@ -54,6 +54,13 @@ type MailMeta struct {
 }
 
 // detect validates a file by content and returns its MIME type and extension.
+// DetectType returns the receipt type of a file by its content, as the
+// import sees it.
+func DetectType(b []byte) (mime string, ok bool) {
+	mime, _, ok = detect(b)
+	return mime, ok
+}
+
 func detect(b []byte) (string, string, bool) {
 	switch {
 	case bytes.HasPrefix(b, []byte{0xFF, 0xD8, 0xFF}):
@@ -135,6 +142,7 @@ func (a *App) Import(ctx context.Context, u *User, source, filename string, data
 		a.Files.Remove(previewKey)
 		return nil, err
 	}
+	a.Log.Info("receipt imported", "receipt", id, "source", source, "file", name, "mime", mime, "bytes", size, "pages", pages)
 	if a.Extractor != nil {
 		a.enqueueExtraction(id)
 	}

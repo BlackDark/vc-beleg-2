@@ -130,6 +130,9 @@ func poll(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) (int, e
 			return imported, err
 		}
 	}
+	if n := len(found.AllUIDs()); n > 0 {
+		log.Info("mail import run", "mails", n, "imported", imported)
+	}
 	return imported, nil
 }
 
@@ -137,6 +140,7 @@ func poll(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) (int, e
 // many receipts were created. Failures of single files are logged; the mail
 // still counts as processed.
 func importMail(ctx context.Context, a *app.App, u *app.User, cfg Config, m *Mail, log *slog.Logger) int {
+	log.Info("mail import: mail", "attachments", len(m.Attachments))
 	if !Allowed(cfg.AllowedSenders, m.From) {
 		log.Info("mail import: sender not allowed", "from", m.From)
 		return 0
