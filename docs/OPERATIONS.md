@@ -39,6 +39,7 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_WEBDAV_PROCESSED_FOLDER` | `Verarbeitet` | Subfolder processed files are moved to (created if missing). |
 | `MAHLZEIT_WEBDAV_DELETE` | `false` | Delete processed files instead of moving them. |
 | `MAHLZEIT_WEBDAV_INTERVAL` | `5m` | Polling interval (at least `1m`). |
+| `MAHLZEIT_WEBDAV_USER_AGENT` | `Microsoft-WebDAV-MiniRedir/…` | Client name sent to the server. Bitrix24 serves files only to WebDAV clients it knows; change it only if a server needs another one. |
 | `MAHLZEIT_TYPST` | `typst` | Typst binary (the image sets `/usr/local/bin/typst`). |
 | `MAHLZEIT_MAX_UPLOAD_MB` | `25` | Upload limit per file (1–25). |
 | `MAHLZEIT_MAX_MEGAPIXELS` | `40` | Image size limit (1–40). |

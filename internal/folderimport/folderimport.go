@@ -27,6 +27,7 @@ type Config struct {
 	Delete          bool   // delete processed files instead of moving them
 	Interval        time.Duration
 	MaxBytes        int64
+	UserAgent       string // sent to the server; empty takes DefaultUserAgent
 }
 
 // settle is how old a file must be before it is read, so a file still
@@ -95,7 +96,7 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 		s.Enabled = true
 		s.Folder = Redact(cfg.URL)
 	})
-	client, err := NewDav(cfg.URL, cfg.Username, cfg.Password)
+	client, err := NewDav(cfg.URL, cfg.Username, cfg.Password, cfg.UserAgent)
 	if err != nil {
 		a.UpdateFolderStatus(func(s *app.FolderStatus) { s.LastError = err.Error() })
 		log.Error("folder import disabled", "err", err)
@@ -217,7 +218,7 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 		return "", fmt.Errorf("read %s: %w", fi.Name, err)
 	}
 	if int64(len(data)) > cfg.MaxBytes {
-		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit)
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", len(data), "detected", http.DetectContentType(data))
 		return limit, nil // the server did not report the size
 	}
 	if done, err := t.FileImported(ctx, u, data); err != nil || done {

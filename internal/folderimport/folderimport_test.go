@@ -59,7 +59,7 @@ func newDAV(t *testing.T) (*Dav, xwebdav.FileSystem, string) {
 	}))
 	t.Cleanup(srv.Close)
 	url := srv.URL + "/dav/Belege"
-	c, err := NewDav(url, "max", "secret")
+	c, err := NewDav(url, "max", "secret", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 func TestPollReportsWrongPassword(t *testing.T) {
 	_, fs, url := newDAV(t)
 	put(t, fs, "/Belege/a.jpg", "jpeg")
-	bad, err := NewDav(url, "max", "wrong")
+	bad, err := NewDav(url, "max", "wrong", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,6 +193,12 @@ func bitrixLike(t *testing.T, moved *[]string) string {
 			if r.URL.Path != base+"Kassenbon März.jpg" {
 				t.Errorf("GET %s", r.URL.Path)
 			}
+			// Like Bitrix24: unknown clients get the portal page.
+			if !strings.Contains(r.UserAgent(), "Microsoft-WebDAV-MiniRedir") {
+				w.Header().Set("Content-Type", "text/html")
+				io.WriteString(w, "<html>Feed</html>")
+				return
+			}
 			io.WriteString(w, "jpeg")
 		case "MKCOL":
 			w.WriteHeader(http.StatusMethodNotAllowed) // exists
@@ -210,7 +216,7 @@ func bitrixLike(t *testing.T, moved *[]string) string {
 func TestPollToleratesMissingProperties(t *testing.T) {
 	var moved []string
 	url := bitrixLike(t, &moved)
-	c, err := NewDav(url, "max", "secret")
+	c, err := NewDav(url, "max", "secret", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +277,7 @@ func TestPollKeepsFileWhenServerAnswersWithWebPage(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	c, _ := NewDav(srv.URL+"/dav", "max", "secret")
+	c, _ := NewDav(srv.URL+"/dav", "max", "secret", "")
 	a := &fakeApp{}
 	_, err := Poll(context.Background(), Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}, c, a, NewTracker(), time.Now(), quiet)
 	if err == nil || !strings.Contains(err.Error(), "web page") || len(a.imported) != 0 || slices.Contains(moved, "MOVE") {

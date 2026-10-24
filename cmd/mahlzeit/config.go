@@ -237,6 +237,7 @@ func folderConfig(maxBytes int64) (*folderimport.Config, error) {
 	f := &folderimport.Config{
 		URL: strings.TrimRight(raw, "/"), Username: env("MAHLZEIT_WEBDAV_USERNAME", ""),
 		ProcessedFolder: strings.Trim(env("MAHLZEIT_WEBDAV_PROCESSED_FOLDER", "Verarbeitet"), "/"), MaxBytes: maxBytes,
+		UserAgent: env("MAHLZEIT_WEBDAV_USER_AGENT", ""),
 	}
 	if u, err := url.Parse(f.URL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
 		errs = append(errs, errors.New("MAHLZEIT_WEBDAV_URL must be an absolute http(s) URL without credentials"))

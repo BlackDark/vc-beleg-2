@@ -35,7 +35,7 @@ func checkFolder(ctx context.Context, cfg *Config) error {
 	if cfg.Folder == nil {
 		return errors.New("folder import is off (MAHLZEIT_WEBDAV_URL)")
 	}
-	dav, err := folderimport.NewDav(cfg.Folder.URL, cfg.Folder.Username, cfg.Folder.Password)
+	dav, err := folderimport.NewDav(cfg.Folder.URL, cfg.Folder.Username, cfg.Folder.Password, cfg.Folder.UserAgent)
 	if err != nil {
 		return err
 	}

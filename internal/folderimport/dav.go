@@ -27,19 +27,28 @@ type Entry struct {
 // return (Bitrix24 omits getcontentlength on some entries), so missing
 // properties are tolerated instead of failing the whole listing.
 type Dav struct {
-	client   *http.Client
-	base     *url.URL // the watched folder, with a trailing slash
-	username string
-	password string
+	client    *http.Client
+	base      *url.URL // the watched folder, with a trailing slash
+	username  string
+	password  string
+	userAgent string
 }
 
-// NewDav creates a client for the folder at rawURL.
-func NewDav(rawURL, username, password string) (*Dav, error) {
+// DefaultUserAgent names a known WebDAV client. Bitrix24 serves its web
+// portal page instead of the file to clients it does not recognise.
+const DefaultUserAgent = "Microsoft-WebDAV-MiniRedir/10.0.19045 (Mahlzeit)"
+
+// NewDav creates a client for the folder at rawURL; an empty userAgent
+// takes DefaultUserAgent.
+func NewDav(rawURL, username, password, userAgent string) (*Dav, error) {
 	u, err := url.Parse(strings.TrimRight(rawURL, "/") + "/")
 	if err != nil {
 		return nil, err
 	}
-	return &Dav{client: &http.Client{Timeout: 2 * time.Minute}, base: u, username: username, password: password}, nil
+	if userAgent == "" {
+		userAgent = DefaultUserAgent
+	}
+	return &Dav{client: &http.Client{Timeout: 2 * time.Minute}, base: u, username: username, password: password, userAgent: userAgent}, nil
 }
 
 const propfindBody = `<?xml version="1.0" encoding="utf-8"?>
@@ -185,6 +194,7 @@ func (d *Dav) request(ctx context.Context, method, target string, body io.Reader
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", d.userAgent)
 	if d.username != "" || d.password != "" {
 		req.SetBasicAuth(d.username, d.password)
 	}
