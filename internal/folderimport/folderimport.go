@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -149,15 +150,14 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 			return res, nil
 		}
 		name := fi.Name
-		ok, err := importFile(ctx, cfg, f, t, u, fi)
+		reason, err := importFile(ctx, cfg, f, t, u, fi, log)
 		if err != nil {
 			return res, err
 		}
-		if ok {
+		if reason == "" {
 			res.Imported++
 		} else {
-			res.Rejected = append(res.Rejected, name)
-			log.Warn("folder import: file rejected", "file", name)
+			res.Rejected = append(res.Rejected, name+" ("+reason+")")
 		}
 		if err := finish(ctx, cfg, f, fi, now); err != nil {
 			return res, err
@@ -185,33 +185,40 @@ func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]En
 }
 
 // importFile reads one file and imports it unless the same content came
-// from the folder before (a move that failed last time). It reports whether
-// the file is accounted for; false means it was rejected.
-func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User, fi Entry) (bool, error) {
+// from the folder before (a move that failed last time). It returns why the
+// file was rejected, or "" when it is accounted for.
+func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User, fi Entry, log *slog.Logger) (string, error) {
+	const limit = "larger than the upload limit"
 	if fi.Size > cfg.MaxBytes {
-		return false, nil
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", fi.Size)
+		return limit, nil
 	}
 	r, err := f.Open(ctx, fi.Href)
 	if err != nil {
-		return false, fmt.Errorf("read %s: %w", fi.Name, err)
+		return "", fmt.Errorf("read %s: %w", fi.Name, err)
 	}
 	data, err := io.ReadAll(io.LimitReader(r, cfg.MaxBytes+1))
 	r.Close()
 	if err != nil {
-		return false, fmt.Errorf("read %s: %w", fi.Name, err)
+		return "", fmt.Errorf("read %s: %w", fi.Name, err)
 	}
 	if int64(len(data)) > cfg.MaxBytes {
-		return false, nil // the server did not report the size
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit)
+		return limit, nil // the server did not report the size
 	}
 	if done, err := t.FileImported(ctx, u, data); err != nil || done {
-		return done, err
+		return "", err
 	}
 	_, err = t.Import(ctx, u, "folder", fi.Name, data, "", nil)
 	var invalid *app.Error
 	if errors.As(err, &invalid) {
-		return false, nil // not a receipt the app accepts
+		// The detected type tells e.g. a HEIC photo with a .jpeg name apart
+		// from a broken file; the content itself is never logged.
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", invalid.Code,
+			"bytes", len(data), "detected", http.DetectContentType(data))
+		return invalid.Message, nil
 	}
-	return err == nil, err
+	return "", err
 }
 
 // finish deletes the file or moves it to the processed folder under a

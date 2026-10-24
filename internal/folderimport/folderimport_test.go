@@ -111,7 +111,7 @@ func TestPollMovesProcessedFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	slices.Sort(a.imported)
-	if res.Imported != 2 || !slices.Equal(a.imported, []string{"bon 1.JPG", "scan.pdf"}) || !slices.Equal(res.Rejected, []string{"kaputt.png"}) {
+	if res.Imported != 2 || !slices.Equal(a.imported, []string{"bon 1.JPG", "scan.pdf"}) || !slices.Equal(res.Rejected, []string{"kaputt.png (unreadable)"}) {
 		t.Fatalf("result = %+v, imported %v", res, a.imported)
 	}
 	stamp := now.Format("20060102-150405") + "-"
@@ -140,7 +140,7 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The duplicate counts as done; the oversized file is rejected; all go.
-	if res.Imported != 2 || !slices.Equal(a.imported, []string{"neu.jpg"}) || !slices.Equal(res.Rejected, []string{"gross.pdf"}) {
+	if res.Imported != 2 || !slices.Equal(a.imported, []string{"neu.jpg"}) || !slices.Equal(res.Rejected, []string{"gross.pdf (larger than the upload limit)"}) {
 		t.Fatalf("result = %+v, imported %v", res, a.imported)
 	}
 	if got := names(t, fs, "/Belege"); len(got) != 0 {
@@ -249,5 +249,32 @@ func TestTrackerWaitsForUndatedFiles(t *testing.T) {
 	dated := Entry{Href: "https://dav/y.jpg", ModTime: t0}
 	if tr.settled(dated, t0.Add(30*time.Second)) || !tr.settled(dated, t0.Add(time.Minute)) {
 		t.Fatal("dated file")
+	}
+}
+
+// A login page served instead of the file must not count as a rejected
+// receipt: the file stays where it is and the run reports an error.
+func TestPollKeepsFileWhenServerAnswersWithWebPage(t *testing.T) {
+	var moved []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "PROPFIND":
+			w.WriteHeader(http.StatusMultiStatus)
+			io.WriteString(w, `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>/dav/bon.jpg</d:href>`+
+				`<d:propstat><d:prop><d:resourcetype/><d:getlastmodified>Mon, 01 Jan 2024 00:00:00 GMT</d:getlastmodified></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>`)
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			io.WriteString(w, "<html>Login</html>")
+		default:
+			moved = append(moved, r.Method)
+			w.WriteHeader(http.StatusCreated)
+		}
+	}))
+	defer srv.Close()
+	c, _ := NewDav(srv.URL+"/dav", "max", "secret")
+	a := &fakeApp{}
+	_, err := Poll(context.Background(), Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}, c, a, NewTracker(), time.Now(), quiet)
+	if err == nil || !strings.Contains(err.Error(), "web page") || len(a.imported) != 0 || slices.Contains(moved, "MOVE") {
+		t.Fatalf("err = %v, imported %v, requests %v", err, a.imported, moved)
 	}
 }

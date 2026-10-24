@@ -114,6 +114,12 @@ func (d *Dav) Open(ctx context.Context, href string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A login or error page instead of the file means the download failed;
+	// the file must stay in the folder.
+	if strings.HasPrefix(strings.ToLower(resp.Header.Get("Content-Type")), "text/html") {
+		resp.Body.Close()
+		return nil, errors.New("GET: the server answered with a web page instead of the file (login or redirect?)")
+	}
 	return resp.Body, nil
 }
 
