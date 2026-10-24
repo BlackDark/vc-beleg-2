@@ -106,7 +106,7 @@ func TestPollMovesProcessedFiles(t *testing.T) {
 	now := time.Now().Add(2 * time.Minute) // files are settled
 	a := &fakeApp{}
 
-	res, err := Poll(context.Background(), cfg, c, a, now, quiet)
+	res, err := Poll(context.Background(), cfg, c, a, NewTracker(), now, quiet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,10 +132,10 @@ func TestPollSkipsUnsettledAndDuplicatesAndDeletes(t *testing.T) {
 	a := &fakeApp{seen: map[string]bool{"again": true}}
 
 	// Just written: nothing happens yet.
-	if res, err := Poll(context.Background(), cfg, c, a, time.Now(), quiet); err != nil || res.Imported != 0 || len(names(t, fs, "/Belege")) != 3 {
+	if res, err := Poll(context.Background(), cfg, c, a, NewTracker(), time.Now(), quiet); err != nil || res.Imported != 0 || len(names(t, fs, "/Belege")) != 3 {
 		t.Fatalf("unsettled: %+v %v", res, err)
 	}
-	res, err := Poll(context.Background(), cfg, c, a, time.Now().Add(2*time.Minute), quiet)
+	res, err := Poll(context.Background(), cfg, c, a, NewTracker(), time.Now().Add(2*time.Minute), quiet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestPollReportsWrongPassword(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Poll(context.Background(), Config{MaxBytes: 1}, bad, &fakeApp{}, time.Now(), quiet); err == nil || !strings.Contains(err.Error(), "list folder") {
+	if _, err := Poll(context.Background(), Config{MaxBytes: 1}, bad, &fakeApp{}, NewTracker(), time.Now(), quiet); err == nil || !strings.Contains(err.Error(), "list folder") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -185,6 +185,9 @@ func bitrixLike(t *testing.T, moved *[]string) string {
 				`<d:response><d:href>`+srv.URL+`/company/personal/user/1/disk/path/Zulagen</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
 				`<d:response><d:href>`+base+`Verarbeitet</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
 				`<d:response><d:href>`+base+`Kassenbon%20M%C3%A4rz.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat>`+missing+`</d:response>`+
+				// Entries outside the watched folder must never be requested.
+				`<d:response><d:href>https://elsewhere.example/steal.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`+
+				`<d:response><d:href>/company/personal/user/1/disk/path/Zulagen-alt/x.jpg</d:href><d:propstat><d:prop><d:resourcetype/></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`+
 				`</d:multistatus>`)
 		case http.MethodGet:
 			if r.URL.Path != base+"Kassenbon März.jpg" {
@@ -213,7 +216,13 @@ func TestPollToleratesMissingProperties(t *testing.T) {
 	}
 	a := &fakeApp{}
 	now := time.Date(2026, 10, 24, 17, 30, 0, 0, time.UTC)
-	res, err := Poll(context.Background(), Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}, c, a, now, quiet)
+	cfg := Config{ProcessedFolder: "Verarbeitet", MaxBytes: 1 << 20}
+	tr := NewTracker()
+	// Without a date, the first sighting only starts the settle time.
+	if res, err := Poll(context.Background(), cfg, c, a, tr, now.Add(-2*time.Minute), quiet); err != nil || res.Imported != 0 {
+		t.Fatalf("first poll: %+v %v", res, err)
+	}
+	res, err := Poll(context.Background(), cfg, c, a, tr, now, quiet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,5 +232,22 @@ func TestPollToleratesMissingProperties(t *testing.T) {
 	want := "/company/personal/user/1/disk/path/Zulagen/Kassenbon März.jpg -> " + url + "/Verarbeitet/20261024-173000-Kassenbon%20M%C3%A4rz.jpg overwrite=F"
 	if len(moved) != 1 || moved[0] != want {
 		t.Fatalf("moved = %v\nwant %s", moved, want)
+	}
+}
+
+func TestTrackerWaitsForUndatedFiles(t *testing.T) {
+	tr := NewTracker()
+	t0 := time.Date(2026, 10, 24, 18, 0, 0, 0, time.UTC)
+	f := Entry{Href: "https://dav/x.jpg", Size: 10}
+	if tr.settled(f, t0) || tr.settled(f, t0.Add(30*time.Second)) {
+		t.Fatal("settled too early")
+	}
+	f.Size = 20 // still growing: the clock restarts
+	if tr.settled(f, t0.Add(2*time.Minute)) || !tr.settled(f, t0.Add(3*time.Minute)) {
+		t.Fatal("growing file")
+	}
+	dated := Entry{Href: "https://dav/y.jpg", ModTime: t0}
+	if tr.settled(dated, t0.Add(30*time.Second)) || !tr.settled(dated, t0.Add(time.Minute)) {
+		t.Fatal("dated file")
 	}
 }

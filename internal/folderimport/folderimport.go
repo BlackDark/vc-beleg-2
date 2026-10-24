@@ -51,6 +51,36 @@ type folder interface {
 	Delete(ctx context.Context, href string) error
 }
 
+// Tracker remembers files whose server reports no modification date, so
+// such a file counts as settled only once a later poll sees it unchanged.
+type Tracker struct {
+	seen map[string]sighting
+}
+
+type sighting struct {
+	size int64
+	at   time.Time
+}
+
+// NewTracker creates an empty tracker.
+func NewTracker() *Tracker { return &Tracker{seen: map[string]sighting{}} }
+
+// settled reports whether the file is no longer being written.
+func (t *Tracker) settled(fi Entry, now time.Time) bool {
+	if !fi.ModTime.IsZero() {
+		return now.Sub(fi.ModTime) >= settle
+	}
+	s, ok := t.seen[fi.Href]
+	if !ok || s.size != fi.Size {
+		t.seen[fi.Href] = sighting{size: fi.Size, at: now}
+		return false
+	}
+	return now.Sub(s.at) >= settle
+}
+
+// forget drops a processed file.
+func (t *Tracker) forget(href string) { delete(t.seen, href) }
+
 // Result is one poll's outcome.
 type Result struct {
 	Imported int
@@ -69,10 +99,11 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 		log.Error("folder import disabled", "err", err)
 		return
 	}
+	tracker := NewTracker()
 	ticker := time.NewTicker(cfg.Interval)
 	defer ticker.Stop()
 	for {
-		res, err := Poll(ctx, cfg, client, a, time.Now(), log)
+		res, err := Poll(ctx, cfg, client, a, tracker, time.Now(), log)
 		a.UpdateFolderStatus(func(s *app.FolderStatus) {
 			s.LastRun = time.Now().UTC().Format(time.RFC3339)
 			s.Imported += res.Imported
@@ -95,7 +126,7 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 }
 
 // Poll imports the settled receipt files of the folder once.
-func Poll(ctx context.Context, cfg Config, f folder, t target, now time.Time, log *slog.Logger) (Result, error) {
+func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now time.Time, log *slog.Logger) (Result, error) {
 	var res Result
 	u, err := t.Account(ctx)
 	if errors.Is(err, app.ErrNotFound) {
@@ -104,7 +135,7 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, now time.Time, lo
 	if err != nil {
 		return res, err
 	}
-	files, err := candidates(ctx, f, now)
+	files, err := candidates(ctx, f, tr, now)
 	if err != nil || len(files) == 0 {
 		return res, err
 	}
@@ -131,12 +162,13 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, now time.Time, lo
 		if err := finish(ctx, cfg, f, fi, now); err != nil {
 			return res, err
 		}
+		tr.forget(fi.Href)
 	}
 	return res, nil
 }
 
 // candidates lists the receipt files that are no longer being written.
-func candidates(ctx context.Context, f folder, now time.Time) ([]Entry, error) {
+func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]Entry, error) {
 	list, err := f.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list folder: %w", err)
@@ -144,7 +176,7 @@ func candidates(ctx context.Context, f folder, now time.Time) ([]Entry, error) {
 	var out []Entry
 	for _, fi := range list {
 		ext := strings.ToLower(path.Ext(fi.Name))
-		if fi.IsDir || !receiptExts[ext] || now.Sub(fi.ModTime) < settle {
+		if fi.IsDir || !receiptExts[ext] || !tr.settled(fi, now) {
 			continue
 		}
 		out = append(out, fi)

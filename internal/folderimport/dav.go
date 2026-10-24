@@ -81,8 +81,8 @@ func (d *Dav) List(ctx context.Context) ([]Entry, error) {
 	var out []Entry
 	for _, r := range ms.Responses {
 		href, err := d.base.Parse(strings.TrimSpace(r.Href))
-		if err != nil || strings.TrimRight(href.Path, "/") == strings.TrimRight(d.base.Path, "/") {
-			continue // unparsable or the folder itself
+		if err != nil || !d.inside(href) {
+			continue // unparsable, the folder itself, or elsewhere
 		}
 		e := Entry{Href: href.String(), Name: path.Base(strings.TrimRight(href.Path, "/")), Size: -1, IsDir: strings.HasSuffix(href.Path, "/")}
 		for _, ps := range r.Propstat {
@@ -160,6 +160,13 @@ func (d *Dav) Delete(ctx context.Context, href string) error {
 	}
 	resp.Body.Close()
 	return nil
+}
+
+// inside reports whether href is an entry of the watched folder. Requests
+// carry the credentials, so an answer must not point them anywhere else.
+func (d *Dav) inside(href *url.URL) bool {
+	return href.Scheme == d.base.Scheme && href.Host == d.base.Host &&
+		strings.HasPrefix(href.Path, d.base.Path) && strings.TrimRight(href.Path, "/") != strings.TrimRight(d.base.Path, "/")
 }
 
 // child is the escaped URL of a path below the watched folder.

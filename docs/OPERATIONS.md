@@ -66,7 +66,7 @@ Use a dedicated mailbox. Send receipts as attachments or inline photos (JPEG, PN
 
 ## Folder import (WebDAV)
 
-Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a scanner app on your phone. Every few minutes Mahlzeit imports the JPEG, PNG and PDF files in it (not in subfolders) as receipts to check and moves them to `Verarbeitet/` with a time stamp in the name. Files younger than a minute are left for the next run, so uploads in progress are not read half-written. Other files stay untouched. A file Mahlzeit cannot read (or larger than the upload limit) is moved too and named in Settings → Ordner-Import, which also shows the last run.
+Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a scanner app on your phone. Every few minutes Mahlzeit imports the JPEG, PNG and PDF files in it (not in subfolders) as receipts to check and moves them to `Verarbeitet/` with a time stamp in the name. Files younger than a minute are left for the next run, so uploads in progress are not read half-written; if the server reports no date, a file waits until a later run sees it unchanged. Other files stay untouched. A file Mahlzeit cannot read (or larger than the upload limit) is moved too and named in Settings → Ordner-Import, which also shows the last run.
 
 Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<folder>`, with an app password (Settings → Security → Devices & sessions).
 
