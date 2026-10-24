@@ -282,4 +282,3 @@ func (x ExtractConfig) Label() string {
 	}
 	return label
 }
-
