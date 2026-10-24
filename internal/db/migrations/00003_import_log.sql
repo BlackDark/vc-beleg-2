@@ -9,6 +9,8 @@ CREATE TABLE import_log (
     filename    TEXT NOT NULL DEFAULT '',
     outcome     TEXT NOT NULL CHECK (outcome IN ('imported', 'duplicate', 'rejected', 'read', 'read_failed')),
     message     TEXT NOT NULL DEFAULT '',
+    code        TEXT NOT NULL DEFAULT '',
+    params_json TEXT NOT NULL DEFAULT '{}',
     receipt_id  INTEGER
 );
 CREATE INDEX import_log_employee_at ON import_log(employee_id, at);

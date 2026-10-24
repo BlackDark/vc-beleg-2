@@ -85,6 +85,10 @@ export type FolderStatus = {
 
 export type LogEntry = {
     at: string;
+    /**
+     * error code of a rejection, for translation
+     */
+    code: string;
     filename: string;
     id: number;
     /**
@@ -92,6 +96,9 @@ export type LogEntry = {
      */
     message: string;
     outcome: 'imported' | 'duplicate' | 'rejected' | 'read' | 'read_failed';
+    params: {
+        [key: string]: string;
+    };
     /**
      * 0 when no receipt was created
      */

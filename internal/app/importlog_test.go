@@ -26,7 +26,7 @@ func TestImportLog(t *testing.T) {
 	if imported.Outcome != "imported" || imported.Source != "folder" || imported.ReceiptID != r.ID || imported.Filename != "bon.png" {
 		t.Errorf("imported = %+v", imported)
 	}
-	if rejected.Outcome != "rejected" || rejected.Source != "mail" || rejected.ReceiptID != 0 || !strings.Contains(rejected.Message, "JPEG, PNG and PDF") {
+	if rejected.Outcome != "rejected" || rejected.Source != "mail" || rejected.ReceiptID != 0 || !strings.Contains(rejected.Message, "JPEG, PNG and PDF") || rejected.Code != "upload.unsupported" {
 		t.Errorf("rejected = %+v", rejected)
 	}
 	if read.Outcome != "read" || read.ReceiptID != r.ID || !strings.HasPrefix(read.Message, "gemini gemini-flash-latest · ") || !strings.HasSuffix(read.Message, "found: date, total") {

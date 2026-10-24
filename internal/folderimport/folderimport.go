@@ -209,7 +209,8 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 	const limit = "larger than the upload limit"
 	if fi.Size > cfg.MaxBytes {
 		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", fi.Size)
-		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit})
+		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit,
+			Code: "upload.too_large", Params: map[string]string{"limitMb": fmt.Sprint(cfg.MaxBytes >> 20)}})
 		return limit, nil
 	}
 	r, err := f.Open(ctx, fi.Href)
@@ -223,7 +224,8 @@ func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User
 	}
 	if int64(len(data)) > cfg.MaxBytes {
 		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", len(data), "detected", http.DetectContentType(data))
-		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit})
+		t.Record(ctx, u, app.LogEntry{Source: "folder", Filename: fi.Name, Outcome: "rejected", Message: limit,
+			Code: "upload.too_large", Params: map[string]string{"limitMb": fmt.Sprint(cfg.MaxBytes >> 20)}})
 		return limit, nil // the server did not report the size
 	}
 	if done, err := t.FileImported(ctx, u, data); err != nil || done {

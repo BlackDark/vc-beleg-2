@@ -54,6 +54,7 @@ export const zFolderStatus = z.object({
 
 export const zLogEntry = z.object({
     at: z.string(),
+    code: z.string(),
     filename: z.string(),
     id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     message: z.string(),
@@ -64,6 +65,7 @@ export const zLogEntry = z.object({
         'read',
         'read_failed'
     ]),
+    params: z.record(z.string(), z.string()),
     receiptId: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     source: z.enum([
         'upload',

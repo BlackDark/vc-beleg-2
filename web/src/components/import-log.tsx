@@ -6,6 +6,7 @@ import type { LogEntry } from "@/api/gen/types.gen";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/misc";
+import { errorText } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { m } from "@/paraglide/messages";
 
@@ -62,7 +63,7 @@ export function ImportLogCard() {
                   </div>
                   <p className="break-words text-xs text-muted-foreground">
                     {formatDateTime(e.at)}
-                    {e.message ? ` · ${e.message}` : ""}
+                    {e.code || e.message ? ` · ${e.code ? errorText(e) : e.message}` : ""}
                   </p>
                 </li>
               );

@@ -2,19 +2,22 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 )
 
 // LogEntry is one line of the import log (Import-Protokoll).
 type LogEntry struct {
-	ID        int64  `json:"id"`
-	At        string `json:"at"`
-	Source    string `json:"source" enum:"upload,mail,folder,reader"`
-	Filename  string `json:"filename"`
-	Outcome   string `json:"outcome" enum:"imported,duplicate,rejected,read,read_failed"`
-	Message   string `json:"message" doc:"reason, or reader and duration"`
-	ReceiptID int64  `json:"receiptId" doc:"0 when no receipt was created"`
+	ID        int64             `json:"id"`
+	At        string            `json:"at"`
+	Source    string            `json:"source" enum:"upload,mail,folder,reader"`
+	Filename  string            `json:"filename"`
+	Outcome   string            `json:"outcome" enum:"imported,duplicate,rejected,read,read_failed"`
+	Message   string            `json:"message" doc:"reason, or reader and duration"`
+	Code      string            `json:"code" doc:"error code of a rejection, for translation"`
+	Params    map[string]string `json:"params"`
+	ReceiptID int64             `json:"receiptId" doc:"0 when no receipt was created"`
 }
 
 // logRetention is how long import log entries are kept.
@@ -27,8 +30,12 @@ func (a *App) Record(ctx context.Context, u *User, e LogEntry) {
 		return
 	}
 	now := a.now().UTC()
-	_, err := a.DB.ExecContext(ctx, `INSERT INTO import_log(employee_id, at, source, filename, outcome, message, receipt_id) VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, 0))`,
-		u.EmployeeID, now.Format(time.RFC3339), e.Source, e.Filename, e.Outcome, e.Message, e.ReceiptID)
+	params, _ := json.Marshal(e.Params)
+	if e.Params == nil {
+		params = []byte("{}")
+	}
+	_, err := a.DB.ExecContext(ctx, `INSERT INTO import_log(employee_id, at, source, filename, outcome, message, code, params_json, receipt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0))`,
+		u.EmployeeID, now.Format(time.RFC3339), e.Source, e.Filename, e.Outcome, e.Message, e.Code, string(params), e.ReceiptID)
 	if err == nil {
 		_, err = a.DB.ExecContext(ctx, `DELETE FROM import_log WHERE employee_id = ? AND at < ?`, u.EmployeeID, now.Add(-logRetention).Format(time.RFC3339))
 	}
@@ -39,7 +46,7 @@ func (a *App) Record(ctx context.Context, u *User, e LogEntry) {
 
 // ImportLog returns the latest entries, newest first.
 func (a *App) ImportLog(ctx context.Context, u *User, limit int) ([]LogEntry, error) {
-	rows, err := a.DB.QueryContext(ctx, `SELECT id, at, source, filename, outcome, message, COALESCE(receipt_id, 0) FROM import_log WHERE employee_id = ? ORDER BY at DESC, id DESC LIMIT ?`, u.EmployeeID, limit)
+	rows, err := a.DB.QueryContext(ctx, `SELECT id, at, source, filename, outcome, message, code, params_json, COALESCE(receipt_id, 0) FROM import_log WHERE employee_id = ? ORDER BY at DESC, id DESC LIMIT ?`, u.EmployeeID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +54,12 @@ func (a *App) ImportLog(ctx context.Context, u *User, limit int) ([]LogEntry, er
 	out := []LogEntry{}
 	for rows.Next() {
 		var e LogEntry
-		if err := rows.Scan(&e.ID, &e.At, &e.Source, &e.Filename, &e.Outcome, &e.Message, &e.ReceiptID); err != nil {
+		var params string
+		if err := rows.Scan(&e.ID, &e.At, &e.Source, &e.Filename, &e.Outcome, &e.Message, &e.Code, &params, &e.ReceiptID); err != nil {
 			return nil, err
 		}
+		e.Params = map[string]string{}
+		_ = json.Unmarshal([]byte(params), &e.Params)
 		out = append(out, e)
 	}
 	return out, rows.Err()
@@ -63,6 +73,6 @@ func (a *App) recordImport(ctx context.Context, u *User, source, filename string
 	case err == nil:
 		a.Record(ctx, u, LogEntry{Source: source, Filename: filename, Outcome: "imported", ReceiptID: r.ID})
 	case errors.As(err, &invalid):
-		a.Record(ctx, u, LogEntry{Source: source, Filename: filename, Outcome: "rejected", Message: invalid.Message})
+		a.Record(ctx, u, LogEntry{Source: source, Filename: filename, Outcome: "rejected", Message: invalid.Message, Code: invalid.Code, Params: invalid.Params})
 	}
 }

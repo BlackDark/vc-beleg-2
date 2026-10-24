@@ -207,6 +207,10 @@
           "at": {
             "type": "string"
           },
+          "code": {
+            "description": "error code of a rejection, for translation",
+            "type": "string"
+          },
           "filename": {
             "type": "string"
           },
@@ -227,6 +231,12 @@
               "read_failed"
             ],
             "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
           },
           "receiptId": {
             "description": "0 when no receipt was created",
@@ -250,6 +260,8 @@
           "filename",
           "outcome",
           "message",
+          "code",
+          "params",
           "receiptId"
         ],
         "type": "object"
