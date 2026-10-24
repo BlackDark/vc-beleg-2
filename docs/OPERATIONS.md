@@ -39,6 +39,7 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `MAHLZEIT_WEBDAV_PROCESSED_FOLDER` | `Verarbeitet` | Subfolder processed files are moved to (created if missing). |
 | `MAHLZEIT_WEBDAV_DELETE` | `false` | Delete processed files instead of moving them. |
 | `MAHLZEIT_WEBDAV_INTERVAL` | `5m` | Polling interval (at least `1m`). |
+| `MAHLZEIT_WEBDAV_USER_AGENT` | `Microsoft-WebDAV-MiniRedir/…` | Client name sent to the server. Bitrix24 serves files only to WebDAV clients it knows; change it only if a server needs another one. |
 | `MAHLZEIT_TYPST` | `typst` | Typst binary (the image sets `/usr/local/bin/typst`). |
 | `MAHLZEIT_MAX_UPLOAD_MB` | `25` | Upload limit per file (1–25). |
 | `MAHLZEIT_MAX_MEGAPIXELS` | `40` | Image size limit (1–40). |
@@ -71,6 +72,17 @@ Watch a folder in Nextcloud, ownCloud or on a NAS, e.g. the target folder of a s
 Nextcloud: `MAHLZEIT_WEBDAV_URL=https://<host>/remote.php/dav/files/<user>/<folder>`, with an app password (Settings → Security → Devices & sessions).
 
 Bitrix24: `MAHLZEIT_WEBDAV_URL=https://<portal>.bitrix24.de/company/personal/user/<id>/disk/path/<folder>`; with two-factor login, use an application password.
+
+## Checking the setup
+
+Two commands test the live configuration without changing anything:
+
+```sh
+kubectl exec deploy/mahlzeit -- mahlzeit check folder        # what the next folder import would do with each file
+kubectl exec deploy/mahlzeit -- mahlzeit check ai /tmp/bon.jpg # read one receipt with the configured provider and model
+```
+
+The log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
 
 ## Receipt reading
 

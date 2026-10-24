@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -26,6 +27,7 @@ type Config struct {
 	Delete          bool   // delete processed files instead of moving them
 	Interval        time.Duration
 	MaxBytes        int64
+	UserAgent       string // sent to the server; empty takes DefaultUserAgent
 }
 
 // settle is how old a file must be before it is read, so a file still
@@ -85,6 +87,7 @@ func (t *Tracker) forget(href string) { delete(t.seen, href) }
 type Result struct {
 	Imported int
 	Rejected []string // files moved away without a receipt (invalid, too large)
+	Waiting  int      // receipt files not settled yet
 }
 
 // Run polls until ctx ends.
@@ -93,7 +96,7 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 		s.Enabled = true
 		s.Folder = Redact(cfg.URL)
 	})
-	client, err := NewDav(cfg.URL, cfg.Username, cfg.Password)
+	client, err := NewDav(cfg.URL, cfg.Username, cfg.Password, cfg.UserAgent)
 	if err != nil {
 		a.UpdateFolderStatus(func(s *app.FolderStatus) { s.LastError = err.Error() })
 		log.Error("folder import disabled", "err", err)
@@ -117,6 +120,9 @@ func Run(ctx context.Context, cfg Config, a *app.App, log *slog.Logger) {
 		if err != nil && ctx.Err() == nil {
 			log.Warn("folder import failed", "err", err)
 		}
+		if res.Imported+len(res.Rejected)+res.Waiting > 0 {
+			log.Info("folder import run", "imported", res.Imported, "rejected", len(res.Rejected), "waiting", res.Waiting)
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -135,7 +141,8 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 	if err != nil {
 		return res, err
 	}
-	files, err := candidates(ctx, f, tr, now)
+	files, waiting, err := candidates(ctx, f, tr, now)
+	res.Waiting = waiting
 	if err != nil || len(files) == 0 {
 		return res, err
 	}
@@ -149,15 +156,14 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 			return res, nil
 		}
 		name := fi.Name
-		ok, err := importFile(ctx, cfg, f, t, u, fi)
+		reason, err := importFile(ctx, cfg, f, t, u, fi, log)
 		if err != nil {
 			return res, err
 		}
-		if ok {
+		if reason == "" {
 			res.Imported++
 		} else {
-			res.Rejected = append(res.Rejected, name)
-			log.Warn("folder import: file rejected", "file", name)
+			res.Rejected = append(res.Rejected, name+" ("+reason+")")
 		}
 		if err := finish(ctx, cfg, f, fi, now); err != nil {
 			return res, err
@@ -168,50 +174,66 @@ func Poll(ctx context.Context, cfg Config, f folder, t target, tr *Tracker, now 
 }
 
 // candidates lists the receipt files that are no longer being written.
-func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]Entry, error) {
+// It also counts receipt files left for a later run.
+func candidates(ctx context.Context, f folder, tr *Tracker, now time.Time) ([]Entry, int, error) {
 	list, err := f.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list folder: %w", err)
+		return nil, 0, fmt.Errorf("list folder: %w", err)
 	}
 	var out []Entry
+	waiting := 0
 	for _, fi := range list {
-		ext := strings.ToLower(path.Ext(fi.Name))
-		if fi.IsDir || !receiptExts[ext] || !tr.settled(fi, now) {
+		if !isReceiptFile(fi) {
+			continue
+		}
+		if !tr.settled(fi, now) {
+			waiting++
 			continue
 		}
 		out = append(out, fi)
 	}
-	return out, nil
+	return out, waiting, nil
+}
+
+func isReceiptFile(fi Entry) bool {
+	return !fi.IsDir && receiptExts[strings.ToLower(path.Ext(fi.Name))]
 }
 
 // importFile reads one file and imports it unless the same content came
-// from the folder before (a move that failed last time). It reports whether
-// the file is accounted for; false means it was rejected.
-func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User, fi Entry) (bool, error) {
+// from the folder before (a move that failed last time). It returns why the
+// file was rejected, or "" when it is accounted for.
+func importFile(ctx context.Context, cfg Config, f folder, t target, u *app.User, fi Entry, log *slog.Logger) (string, error) {
+	const limit = "larger than the upload limit"
 	if fi.Size > cfg.MaxBytes {
-		return false, nil
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", fi.Size)
+		return limit, nil
 	}
 	r, err := f.Open(ctx, fi.Href)
 	if err != nil {
-		return false, fmt.Errorf("read %s: %w", fi.Name, err)
+		return "", fmt.Errorf("read %s: %w", fi.Name, err)
 	}
 	data, err := io.ReadAll(io.LimitReader(r, cfg.MaxBytes+1))
 	r.Close()
 	if err != nil {
-		return false, fmt.Errorf("read %s: %w", fi.Name, err)
+		return "", fmt.Errorf("read %s: %w", fi.Name, err)
 	}
 	if int64(len(data)) > cfg.MaxBytes {
-		return false, nil // the server did not report the size
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", limit, "bytes", len(data), "detected", http.DetectContentType(data))
+		return limit, nil // the server did not report the size
 	}
 	if done, err := t.FileImported(ctx, u, data); err != nil || done {
-		return done, err
+		return "", err
 	}
 	_, err = t.Import(ctx, u, "folder", fi.Name, data, "", nil)
 	var invalid *app.Error
 	if errors.As(err, &invalid) {
-		return false, nil // not a receipt the app accepts
+		// The detected type tells e.g. a HEIC photo with a .jpeg name apart
+		// from a broken file; the content itself is never logged.
+		log.Warn("folder import: file rejected", "file", fi.Name, "reason", invalid.Code,
+			"bytes", len(data), "detected", http.DetectContentType(data))
+		return invalid.Message, nil
 	}
-	return err == nil, err
+	return "", err
 }
 
 // finish deletes the file or moves it to the processed folder under a

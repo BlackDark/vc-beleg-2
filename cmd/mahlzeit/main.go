@@ -50,6 +50,8 @@ func main() {
 		err = backup(os.Args[2:])
 	case "verify":
 		err = verify()
+	case "check":
+		err = check(os.Args[2:])
 	case "healthcheck":
 		err = healthcheck()
 	case "version", "--version":
@@ -93,7 +95,7 @@ func serve() error {
 		return err
 	}
 	reader := newReader(cfg.Extract)
-	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages}, log, reader)
+	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages, ReaderLabel: cfg.Extract.Label()}, log, reader)
 	if err != nil {
 		return err
 	}
@@ -118,7 +120,15 @@ func serve() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil, "extraction", reader != nil, "provider", cfg.Extract.Provider, "mail", cfg.Mail != nil, "folder", cfg.Folder != nil)
+	mailbox, folder := "off", "off"
+	if cfg.Mail != nil {
+		mailbox = fmt.Sprintf("%s@%s/%s", cfg.Mail.Username, cfg.Mail.Host, cfg.Mail.Folder)
+	}
+	if cfg.Folder != nil {
+		folder = folderimport.Redact(cfg.Folder.URL)
+	}
+	log.Info("listening", "addr", cfg.Listen, "version", version, "password", cfg.PasswordLogin, "oidc", cfg.OIDC != nil,
+		"reader", cfg.Extract.Label(), "mail", mailbox, "folder", folder)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -254,4 +264,21 @@ func newReader(x ExtractConfig) app.Extractor {
 		}
 		return extract.NewClaude(x.APIKey, x.Model, x.Fallback, opts...)
 	}
+}
+
+// Label names the receipt reader for logs: provider, model (defaults
+// resolved) and a custom endpoint, or "off".
+func (x ExtractConfig) Label() string {
+	if !x.Enabled {
+		return "off"
+	}
+	model := x.Model
+	if model == "" {
+		model = map[string]string{"claude": extract.ClaudeModel, "gemini": extract.GeminiModel}[x.Provider]
+	}
+	label := x.Provider + " " + model
+	if x.BaseURL != "" {
+		label += " via " + folderimport.Redact(x.BaseURL)
+	}
+	return label
 }

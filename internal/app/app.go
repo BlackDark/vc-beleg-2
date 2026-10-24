@@ -51,6 +51,7 @@ type Config struct {
 	MaxUploadBytes int64
 	MaxPixels      int64
 	MaxPDFPages    int
+	ReaderLabel    string // provider and model of the receipt reader, for logs
 }
 
 // Extractor reads date, total and merchant from a receipt file.

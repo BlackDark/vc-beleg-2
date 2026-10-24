@@ -71,16 +71,23 @@ func (a *App) extractOne(ctx context.Context, id int64) {
 		a.Log.Error("extraction: read file", "receipt", id, "err", err)
 		return
 	}
+	a.Log.Info("extraction started", "receipt", id, "reader", a.Cfg.ReaderLabel, "mime", mime, "bytes", len(data))
+	start := time.Now()
 	cctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	ex, err := a.Extractor.Extract(cctx, mime, data)
 	cancel()
+	took := time.Since(start).Round(100 * time.Millisecond)
 	state := "done"
 	if err != nil {
 		if ctx.Err() != nil {
 			return // shutting down; stays pending
 		}
-		a.Log.Warn("extraction failed", "receipt", id, "err", err)
+		a.Log.Warn("extraction failed", "receipt", id, "reader", a.Cfg.ReaderLabel, "took", took.String(), "err", err)
 		state, ex = "failed", Extraction{Error: err.Error()}
+	} else {
+		// Which fields were found, never their values.
+		a.Log.Info("extraction done", "receipt", id, "took", took.String(),
+			"date", ex.Date != "", "total", ex.Total > 0, "merchant", ex.Merchant != "", "uncertain", ex.Uncertain)
 	}
 	b, _ := json.Marshal(ex)
 	// Fill only what the employee has not entered meanwhile; checked
