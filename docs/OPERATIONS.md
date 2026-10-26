@@ -87,6 +87,8 @@ Settings → Import-Protokoll lists the last 90 days: every uploaded, mailed or 
 
 ## Receipt reading
 
+Receipt reading uses a durable queue in SQLite and processes one receipt at a time. The UI distinguishes queued, processing, processed and failed readings from the employee's `zu prüfen` / `geprüft` status. Restarting requeues interrupted readings; live processes do not need to survive for queued receipts to be picked up. Each reading has a three-minute timeout. A missing original file is marked failed rather than left queued. After failure, **Erneut lesen** queues one retry; repeating the request while queued or processing does not create another reading. A processed receipt still needs the employee's confirmation, and manual corrections take precedence over extracted values.
+
 Every new receipt is sent to the configured model, which returns date, total and merchant; the image leaves your server for this (except with a local model). Nothing counts until you check it. Rate limits and temporary API errors are retried automatically; with Claude, a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
 
 | Provider | Settings |

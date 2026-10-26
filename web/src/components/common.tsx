@@ -89,3 +89,16 @@ export function warningText(code: string): string {
 
 export const taxModelText = (model: string): string =>
   ({ A: m.tax_model_a(), B: m.tax_model_b(), C: m.tax_model_c() })[model] ?? model;
+
+/** Receipt reading and employee checking are independent states. */
+export const isExtractionActive = (state: string): boolean => state === "queued" || state === "processing";
+
+export function extractionText(state: string): string {
+  const labels: Record<string, () => string> = {
+    queued: m.extraction_queued,
+    processing: m.extraction_processing,
+    done: m.extraction_done,
+    failed: m.extraction_failed,
+  };
+  return labels[state]?.() ?? "";
+}

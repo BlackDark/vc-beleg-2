@@ -198,11 +198,12 @@ func TestExtractionFillsEmptyFields(t *testing.T) {
 	ctx := context.Background()
 	a, u := newTestApp(t, fakeReader{Extraction{Date: "2026-10-09", Total: 789, Merchant: "Lidl", Uncertain: []string{"total"}}})
 	r := must(a.Import(ctx, u, "upload", "a.png", receiptImage(1), "", nil))
-	if r.Extraction != "pending" {
+	if r.Extraction != "queued" {
 		t.Fatalf("extraction = %s", r.Extraction)
 	}
 	must(a.UpdateReceipt(ctx, u, r.ID, ReceiptInput{Merchant: "Lidl Filiale 12"}))
-	a.extractOne(ctx, <-a.extractQueue)
+	runReader(t, a)
+	waitExtraction(t, a, u, r.ID, "done")
 	r = must(a.GetReceipt(ctx, u, r.ID))
 	if r.Extraction != "done" || r.Date != "2026-10-09" || r.Total != 789 || r.Merchant != "Lidl Filiale 12" || !contains(r.Extracted.Uncertain, "total") {
 		t.Fatalf("receipt = %+v", r)

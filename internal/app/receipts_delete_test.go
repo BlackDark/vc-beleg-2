@@ -3,12 +3,15 @@ package app
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/blackdark/vc-beleg-2/internal/db"
 	"github.com/blackdark/vc-beleg-2/internal/money"
+	"github.com/pressly/goose/v3"
 )
 
 func TestDeleteCheckedReceiptNeverArchived(t *testing.T) {
@@ -96,25 +99,44 @@ func TestDeleteReceiptRequiresOwnership(t *testing.T) {
 
 func TestReceiptNumbersContinueAfterUpgradingAndDeleting(t *testing.T) {
 	ctx := context.Background()
-	a, u := newTestApp(t, nil)
-	r := must(a.Import(ctx, u, "upload", "receipt.png", receiptImage(92), "", nil))
-	r = must(a.CheckReceipt(ctx, u, r.ID, ReceiptInput{Date: "2026-10-05", Total: 500}))
-	// Recreate the pre-counter schema as an upgrade fixture. Assertions below
-	// observe only the app's public receipt operations and assigned numbers.
-	if _, err := a.DB.ExecContext(ctx, `DROP TRIGGER clear_ineligible_receipt_selection; DROP TABLE selected_receipts; DROP TABLE receipt_sequences; DELETE FROM goose_db_version WHERE version_id >= 4`); err != nil {
+	a, _ := newTestApp(t, nil)
+	// Build a genuine version-3 database. Later additive migrations can then
+	// run normally, rather than undoing tables from the current schema.
+	legacyPath := filepath.Join(a.Cfg.DataDir, "legacy.db")
+	legacy := must(sql.Open("sqlite", "file:"+legacyPath+"?_pragma=foreign_keys(1)"))
+	legacy.SetMaxOpenConns(1)
+	t.Cleanup(func() { legacy.Close() })
+	provider := must(goose.NewProvider(goose.DialectSQLite3, legacy, os.DirFS("../db/migrations")))
+	if _, err := provider.UpTo(ctx, 3); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.DB.Close(); err != nil {
+	a.DB = legacy
+	u := must(a.Setup(ctx, "tok", "tok", "Owner", "Max Muster", "a-long-password"))
+	key, sum, size := must3(a.Files.Put("files", ".png", bytes.NewReader(receiptImage(92)), 1<<20))
+	// A historical checked receipt is fixture data, not created by today's
+	// numbering implementation. Its original and number survived the upgrade.
+	if _, err := legacy.ExecContext(ctx, `INSERT INTO receipts(id, employee_id, status, source, number, number_year, number_seq, sha256, filename, mime, size, storage_key, preview_key, date, total, created_at)
+ VALUES (1, ?, 'checked', 'upload', 'B-2026-0007', 2026, 7, ?, 'receipt.png', 'image/png', ?, ?, ?, '2026-10-05', 500, ?)`, u.EmployeeID, sum, size, key, key, a.stamp()); err != nil {
 		t.Fatal(err)
 	}
-	a.DB = must(db.Open(ctx, filepath.Join(a.Cfg.DataDir, "test.db")))
+	if err := legacy.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a.DB = must(db.Open(ctx, legacyPath))
 	t.Cleanup(func() { a.DB.Close() })
-	if err := a.DeleteReceipt(ctx, u, r.ID); err != nil {
+	if err := a.DeleteReceipt(ctx, u, 1); err != nil {
 		t.Fatal(err)
 	}
 	next := must(a.Import(ctx, u, "upload", "next.png", receiptImage(93), "", nil))
 	next = must(a.CheckReceipt(ctx, u, next.ID, ReceiptInput{Date: "2026-10-06", Total: 600}))
-	if next.Number != "B-2026-0002" {
+	if next.Number != "B-2026-0008" {
 		t.Fatalf("reused pre-upgrade receipt number: %s", next.Number)
 	}
+}
+
+func must3[A, B, C any](a A, b B, c C, err error) (A, B, C) {
+	if err != nil {
+		panic(err)
+	}
+	return a, b, c
 }

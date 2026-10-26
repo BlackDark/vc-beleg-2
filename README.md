@@ -15,7 +15,7 @@ Snap or mail your lunch receipts, let it pick the days that count, and archive a
 The rules are simple until they aren't: one allowance per working day, at most €7.67 in 2026, at most 15 days without proof, the receipt caps the amount, and up to €4.57 of it (the benefit value) is taxable. Mahlzeit applies them to your receipts and documents every month.
 
 - **Correct amounts**: 2026 benefit values, tax models A (company pays 25 % flat tax on the taxable part), B (taxable part through payroll) and C (allowance capped at the €3.10 top-up; tax-free when your own share covers the benefit value, otherwise the rest goes through payroll), rule IDs on every day.
-- **Receipts in, no typing**: photo or PDF upload, mail them to a dedicated mailbox, or drop them into a WebDAV folder (Nextcloud, NAS); an LLM (Claude, Gemini or any OpenAI-compatible API such as OpenRouter or a local Ollama) reads date, total and merchant, you confirm.
+- **Receipts in, no typing**: photo or PDF upload, mail them to a dedicated mailbox, or drop them into a WebDAV folder (Nextcloud, NAS); an LLM (Claude, Gemini or any OpenAI-compatible API such as OpenRouter or a local Ollama) reads date, total and merchant, you confirm. Reading runs one receipt at a time, survives restarts, and shows queued, processing or failed status with retry after failure.
 - **Receipt deletion**: delete mistaken or duplicate receipts with confirmation until they appear in an archived monthly report. Archived evidence stays protected, including after reopening a month.
 - **Multiple receipts per day**: use the highest checked receipt automatically, choose one explicitly, or combine receipts for the same meal.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.

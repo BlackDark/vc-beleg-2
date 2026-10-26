@@ -25,6 +25,9 @@ _Avoid_: Bon, document, invoice
 `zu prüfen` after import, `geprüft` after the employee confirmed date, total and merchant. Only checked receipts count.
 _Avoid_: approved, valid
 
+**Receipt reading status** (Verarbeitungsstatus):
+The state of automatically reading date, total and merchant: queued, processing, processed, failed, or off when no reader is configured. Processing happens one receipt at a time. A failed reading can be retried; even a processed receipt still needs to be checked by the employee.
+
 **Mail import** (Mail-Eingang):
 Receipts taken from attachments of mails sent to the dedicated mailbox by an allowed sender.
 

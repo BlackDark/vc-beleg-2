@@ -21,7 +21,7 @@ import {
 } from "@/api/gen/@tanstack/react-query.gen";
 import { listReceipts } from "@/api/gen/sdk.gen";
 import type { Receipt, ReceiptInput } from "@/api/gen/types.gen";
-import { ReceiptStatusBadge, warningText } from "@/components/common";
+import { extractionText, isExtractionActive, ReceiptStatusBadge, warningText } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ function CheckReceipt() {
   const id = Number(Route.useParams().id);
   const q = useQuery({
     ...getReceiptOptions({ path: { id } }),
-    refetchInterval: (q) => (q.state.data?.extraction === "pending" ? 1500 : false),
+    refetchInterval: (q) => (isExtractionActive(q.state.data?.extraction ?? "") ? 1500 : false),
   });
   const r = q.data;
   if (q.isPending) return <Skeleton className="h-96" />;
@@ -297,16 +297,18 @@ function ExtractionState({
   retrying: boolean;
 }) {
   switch (r.extraction) {
-    case "pending":
+    case "queued":
+    case "processing":
       return (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2Icon className="size-4 animate-spin" />
-          {m.extraction_pending()}
+          <Loader2Icon className={cn("size-4", r.extraction === "processing" && "animate-spin")} />
+          {extractionText(r.extraction)}
         </p>
       );
     case "failed":
       return (
         <Alert variant="warning" title={m.extraction_failed()}>
+          {r.extracted.error ? <p>{r.extracted.error}</p> : null}
           {r.status === "pending" ? (
             <Button variant="outline" size="sm" className="mt-2" onClick={onRetry} disabled={retrying}>
               {m.extraction_retry()}

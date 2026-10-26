@@ -2,7 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangleIcon, ChevronRightIcon, FolderIcon, MailIcon, ReceiptIcon } from "lucide-react";
 import { listReceiptsOptions } from "@/api/gen/@tanstack/react-query.gen";
-import { Money, PageHeader, ReceiptStatusBadge, warningText } from "@/components/common";
+import {
+  extractionText,
+  isExtractionActive,
+  Money,
+  PageHeader,
+  ReceiptStatusBadge,
+  warningText,
+} from "@/components/common";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { ReceiptCapture } from "@/components/receipt-capture";
 import { Card } from "@/components/ui/card";
@@ -35,7 +42,7 @@ function Receipts() {
   const navigate = useNavigate({ from: Route.fullPath });
   const q = useQuery({
     ...listReceiptsOptions({ query: { month, status } }),
-    refetchInterval: (q) => (q.state.data?.some((r) => r.extraction === "pending") ? 2000 : false),
+    refetchInterval: (q) => (q.state.data?.some((r) => isExtractionActive(r.extraction)) ? 2000 : false),
   });
   const receipts = q.data ?? [];
 
@@ -95,7 +102,7 @@ function Receipts() {
                 <span className="text-xs text-muted-foreground">
                   {r.date ? formatWeekday(r.date) : m.no_date()}
                   {r.number ? ` · ${r.number}` : ""}
-                  {r.extraction === "pending" ? ` · ${m.extraction_pending()}` : ""}
+                  {extractionText(r.extraction) ? ` · ${extractionText(r.extraction)}` : ""}
                 </span>
                 {r.warnings.length ? (
                   <span className="flex items-center gap-1 text-xs text-warning">

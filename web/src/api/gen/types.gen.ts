@@ -195,7 +195,7 @@ export type Receipt = {
     createdAt: string;
     date: string;
     extracted: Extraction;
-    extraction: 'off' | 'pending' | 'done' | 'failed';
+    extraction: 'off' | 'queued' | 'processing' | 'done' | 'failed';
     filename: string;
     id: number;
     mailFrom: string;

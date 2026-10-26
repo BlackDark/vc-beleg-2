@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -26,22 +27,32 @@ const logRetention = 90 * 24 * time.Hour
 // Record adds an entry to the import log of the account's employee. The log
 // is informational: a failure to write it is logged, never returned.
 func (a *App) Record(ctx context.Context, u *User, e LogEntry) {
+	if err := a.record(ctx, a.DB, u, e); err != nil {
+		a.Log.Error("import log: write", "err", err)
+	}
+}
+
+type logWriter interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
+// record also accepts a transaction so a completed reading and its log become
+// visible together. Callers can retry a failed write without reading again.
+func (a *App) record(ctx context.Context, q logWriter, u *User, e LogEntry) error {
 	if u == nil {
-		return
+		return nil
 	}
 	now := a.now().UTC()
 	params, _ := json.Marshal(e.Params)
 	if e.Params == nil {
 		params = []byte("{}")
 	}
-	_, err := a.DB.ExecContext(ctx, `INSERT INTO import_log(employee_id, at, source, filename, outcome, message, code, params_json, receipt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0))`,
+	_, err := q.ExecContext(ctx, `INSERT INTO import_log(employee_id, at, source, filename, outcome, message, code, params_json, receipt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0))`,
 		u.EmployeeID, now.Format(time.RFC3339), e.Source, e.Filename, e.Outcome, e.Message, e.Code, string(params), e.ReceiptID)
 	if err == nil {
-		_, err = a.DB.ExecContext(ctx, `DELETE FROM import_log WHERE employee_id = ? AND at < ?`, u.EmployeeID, now.Add(-logRetention).Format(time.RFC3339))
+		_, err = q.ExecContext(ctx, `DELETE FROM import_log WHERE employee_id = ? AND at < ?`, u.EmployeeID, now.Add(-logRetention).Format(time.RFC3339))
 	}
-	if err != nil {
-		a.Log.Error("import log: write", "err", err)
-	}
+	return err
 }
 
 // ImportLog returns the latest entries, newest first.

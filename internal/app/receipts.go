@@ -41,7 +41,7 @@ type Receipt struct {
 	Merchant   string      `json:"merchant"`
 	Note       string      `json:"note"`
 	MailFrom   string      `json:"mailFrom"`
-	Extraction string      `json:"extraction" enum:"off,pending,done,failed"`
+	Extraction string      `json:"extraction" enum:"off,queued,processing,done,failed"`
 	Extracted  Extraction  `json:"extracted"`
 	CreatedAt  string      `json:"createdAt"`
 	CheckedAt  string      `json:"checkedAt"`
@@ -151,7 +151,7 @@ func (a *App) importFile(ctx context.Context, u *User, source, filename string, 
 	}
 	a.Log.Info("receipt imported", "receipt", id, "source", source, "file", name, "mime", mime, "bytes", size, "pages", pages)
 	if a.Extractor != nil {
-		a.enqueueExtraction(id)
+		a.wakeExtraction()
 	}
 	return a.GetReceipt(ctx, u, id)
 }
@@ -342,7 +342,7 @@ func (a *App) ListReceipts(ctx context.Context, u *User, month, status string) (
 }
 
 func (a *App) loadReceipts(ctx context.Context, employeeID int64, where string, args ...any) ([]*Receipt, error) {
-	rows, err := a.DB.QueryContext(ctx, `SELECT r.id, r.status, r.source, coalesce(r.number, ''), r.filename, r.mime, r.pages, coalesce(r.date, ''), coalesce(r.total, 0), r.merchant, r.note, r.mail_from, r.extraction, r.extraction_json, r.created_at, coalesce(r.checked_at, ''), `+archivedReceiptSQL+`,
+	rows, err := a.DB.QueryContext(ctx, `SELECT r.id, r.status, r.source, coalesce(r.number, ''), r.filename, r.mime, r.pages, coalesce(r.date, ''), coalesce(r.total, 0), r.merchant, r.note, r.mail_from, CASE WHEN r.extraction = 'pending' THEN CASE WHEN r.extracting = 1 THEN 'processing' ELSE 'queued' END ELSE r.extraction END, r.extraction_json, r.created_at, coalesce(r.checked_at, ''), `+archivedReceiptSQL+`,
 		EXISTS (SELECT 1 FROM receipts d WHERE d.employee_id = r.employee_id AND d.sha256 = r.sha256 AND d.id <> r.id),
 		coalesce((SELECT m.status <> 'open' FROM months m WHERE m.employee_id = r.employee_id AND m.month = substr(r.date, 1, 7)), 0)
 		FROM receipts r WHERE r.employee_id = ? AND `+where+` ORDER BY r.date IS NOT NULL, r.date DESC, r.id DESC`, append([]any{employeeID}, args...)...)

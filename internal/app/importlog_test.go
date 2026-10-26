@@ -15,7 +15,8 @@ func TestImportLog(t *testing.T) {
 	if _, err := a.Import(ctx, u, "mail", "foto.heic", []byte("\x00\x00\x00\x18ftypheic"), "", nil); err == nil {
 		t.Fatal("HEIC accepted")
 	}
-	a.extractOne(ctx, <-a.extractQueue)
+	runReader(t, a)
+	waitExtraction(t, a, u, r.ID, "done")
 
 	log := must(a.ImportLog(ctx, u, 10))
 	if len(log) != 3 {

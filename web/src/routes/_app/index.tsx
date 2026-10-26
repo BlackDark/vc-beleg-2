@@ -2,7 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRightIcon, ReceiptIcon } from "lucide-react";
 import { getMonthOptions, listReceiptsOptions } from "@/api/gen/@tanstack/react-query.gen";
-import { Money, MonthStatusBadge, PageHeader, Row, warningText } from "@/components/common";
+import {
+  extractionText,
+  isExtractionActive,
+  Money,
+  MonthStatusBadge,
+  PageHeader,
+  Row,
+  warningText,
+} from "@/components/common";
 import { ReceiptCapture } from "@/components/receipt-capture";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, EmptyState, Skeleton } from "@/components/ui/misc";
@@ -16,7 +24,7 @@ function Start() {
   const monthQ = useQuery(getMonthOptions({ path: { month } }));
   const pendingQ = useQuery({
     ...listReceiptsOptions({ query: { status: "pending" } }),
-    refetchInterval: (q) => (q.state.data?.some((r) => r.extraction === "pending") ? 2000 : false),
+    refetchInterval: (q) => (q.state.data?.some((r) => isExtractionActive(r.extraction)) ? 2000 : false),
   });
   const mo = monthQ.data;
   const pending = pendingQ.data ?? [];
@@ -98,9 +106,7 @@ function Start() {
                       <span className="grid min-w-0 flex-1">
                         <span className="truncate text-sm font-medium">{r.merchant || r.filename}</span>
                         <span className="text-xs text-muted-foreground">
-                          {r.extraction === "pending"
-                            ? m.extraction_pending()
-                            : formatDate(r.date) || m.no_date()}
+                          {extractionText(r.extraction) || formatDate(r.date) || m.no_date()}
                         </span>
                       </span>
                       {r.total ? <Money cents={r.total} className="text-sm" /> : null}

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/blackdark/vc-beleg-2/internal/export"
@@ -69,10 +70,11 @@ type App struct {
 	Rates     rates.Table
 	Extractor Extractor // nil: extraction is off
 
-	extractQueue chan int64
-	mail         mailState
-	folder       folderState
-	now          func() time.Time
+	extractWake chan struct{}
+	extractMu   sync.Mutex
+	mail        mailState
+	folder      folderState
+	now         func() time.Time
 }
 
 // New creates the services.
@@ -86,8 +88,8 @@ func New(db *sql.DB, cfg Config, log *slog.Logger, ex Extractor) (*App, error) {
 		return nil, err
 	}
 	return &App{DB: db, Cfg: cfg, Log: log, Files: files, Rates: tab, Extractor: ex, now: time.Now,
-		Typst:        &export.Typst{Bin: cfg.Typst, FontDir: cfg.FontDir},
-		extractQueue: make(chan int64, 256)}, nil
+		Typst:       &export.Typst{Bin: cfg.Typst, FontDir: cfg.FontDir},
+		extractWake: make(chan struct{}, 1)}, nil
 }
 
 func (a *App) stamp() string { return a.now().UTC().Format(time.RFC3339) }

@@ -120,7 +120,8 @@ export const zReceipt = z.object({
     extracted: zExtraction,
     extraction: z.enum([
         'off',
-        'pending',
+        'queued',
+        'processing',
         'done',
         'failed'
     ]),
