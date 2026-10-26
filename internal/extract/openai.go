@@ -17,6 +17,8 @@ const OpenAIBaseURL = "https://api.openai.com/v1"
 // OpenAI calls the chat completions endpoint of an OpenAI-compatible API.
 // The model must read images, and PDFs for PDF receipts.
 type OpenAI struct {
+	// Effort defaults to low; none omits the field for models without effort support.
+	Effort  string
 	client  *http.Client
 	apiKey  string
 	model   string
@@ -29,7 +31,7 @@ func NewOpenAI(apiKey, model, baseURL string) *OpenAI {
 	if baseURL == "" {
 		baseURL = OpenAIBaseURL
 	}
-	return &OpenAI{client: http.DefaultClient, apiKey: apiKey, model: model, baseURL: strings.TrimRight(baseURL, "/")}
+	return &OpenAI{Effort: "low", client: http.DefaultClient, apiKey: apiKey, model: model, baseURL: strings.TrimRight(baseURL, "/")}
 }
 
 type openAIResponse struct {
@@ -59,6 +61,13 @@ func (o *OpenAI) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 			"type":        "json_schema",
 			"json_schema": map[string]any{"name": "receipt", "strict": true, "schema": schema},
 		},
+	}
+	if o.Effort != "none" {
+		effort := o.Effort
+		if effort == "" {
+			effort = "low"
+		}
+		body["reasoning_effort"] = effort
 	}
 	header := http.Header{}
 	if o.apiKey != "" {

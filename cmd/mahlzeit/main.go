@@ -95,7 +95,7 @@ func serve() error {
 		return err
 	}
 	reader := newReader(cfg.Extract)
-	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages, ReaderLabel: cfg.Extract.Label()}, log, reader)
+	a, err := app.New(conn, app.Config{DataDir: cfg.DataDir, Typst: cfg.Typst, FontDir: fontDir, MaxUploadBytes: cfg.MaxUploadBytes, MaxPixels: cfg.MaxPixels, MaxPDFPages: cfg.MaxPDFPages, ReaderLabel: cfg.Extract.Label(), ReaderInfo: cfg.Extract.Info()}, log, reader)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,9 @@ func newReader(x ExtractConfig) app.Extractor {
 	case "gemini":
 		return extract.NewGemini(x.APIKey, x.Model, x.BaseURL)
 	case "openai":
-		return extract.NewOpenAI(x.APIKey, x.Model, x.BaseURL)
+		reader := extract.NewOpenAI(x.APIKey, x.Model, x.BaseURL)
+		reader.Effort = x.Effort
+		return reader
 	default:
 		var opts []option.RequestOption
 		if x.BaseURL != "" {

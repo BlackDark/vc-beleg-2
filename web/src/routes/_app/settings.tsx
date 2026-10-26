@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/common";
 import { ImportLogCard } from "@/components/import-log";
+import { ReaderInfoCard } from "@/components/reader-info";
 import { PasswordCard, ProfileCard } from "@/components/settings-account";
 import { CompanyCard, RatesCard } from "@/components/settings-company";
 import { FolderCard, MailCard } from "@/components/settings-integrations";
@@ -55,6 +56,7 @@ function SettingsPage() {
         ) : null}
         {section === "integrations" ? (
           <>
+            <ReaderInfoCard />
             <MailCard />
             <FolderCard />
           </>

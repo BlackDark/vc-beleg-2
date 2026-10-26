@@ -182,6 +182,20 @@ export type ProfileInput = {
     theme: 'dark' | 'light' | 'system';
 };
 
+export type ReaderInfo = {
+    /**
+     * low, medium, high, none, or provider_default
+     */
+    effort: string;
+    enabled: boolean;
+    endpoint: string;
+    fallback: boolean;
+    model: string;
+    provider: string;
+    sequential: boolean;
+    timeoutSeconds: number;
+};
+
 export type ReasonBody = {
     reason: string;
 };
@@ -754,6 +768,31 @@ export type ListRatesResponses = {
 };
 
 export type ListRatesResponse = ListRatesResponses[keyof ListRatesResponses];
+
+export type GetReaderStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/reader-status';
+};
+
+export type GetReaderStatusErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetReaderStatusError = GetReaderStatusErrors[keyof GetReaderStatusErrors];
+
+export type GetReaderStatusResponses = {
+    /**
+     * OK
+     */
+    200: ReaderInfo;
+};
+
+export type GetReaderStatusResponse = GetReaderStatusResponses[keyof GetReaderStatusResponses];
 
 export type ListReceiptsData = {
     body?: never;

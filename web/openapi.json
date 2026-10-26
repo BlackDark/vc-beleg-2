@@ -481,6 +481,48 @@
         ],
         "type": "object"
       },
+      "ReaderInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "effort": {
+            "description": "low, medium, high, none, or provider_default",
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "fallback": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "sequential": {
+            "type": "boolean"
+          },
+          "timeoutSeconds": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "provider",
+          "model",
+          "endpoint",
+          "effort",
+          "fallback",
+          "timeoutSeconds",
+          "sequential"
+        ],
+        "type": "object"
+      },
       "ReasonBody": {
         "additionalProperties": false,
         "properties": {
@@ -1709,6 +1751,42 @@
           }
         ],
         "summary": "Benefit values per year",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/reader-status": {
+      "get": {
+        "operationId": "getReaderStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderInfo"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Receipt reader configuration without credentials",
         "tags": [
           "profile"
         ]

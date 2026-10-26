@@ -17,6 +17,10 @@ type passwordBody struct {
 
 func (s *Server) registerProfile(api huma.API) {
 	tags := []string{"profile"}
+	authed(s, api, huma.Operation{OperationID: "getReaderStatus", Method: http.MethodGet, Path: "/api/reader-status", Tags: tags, Summary: "Receipt reader configuration without credentials"},
+		func(ctx context.Context, u *app.User, _ *empty) (*body[app.ReaderInfo], error) {
+			return wrap(s.app.Cfg.ReaderInfo, nil)
+		})
 	authed(s, api, huma.Operation{OperationID: "getMe", Method: http.MethodGet, Path: "/api/me", Tags: tags},
 		func(ctx context.Context, u *app.User, _ *empty) (*body[*app.User], error) {
 			return &body[*app.User]{Body: u}, nil

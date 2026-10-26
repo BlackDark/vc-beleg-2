@@ -146,7 +146,8 @@ type ExtractConfig struct {
 	APIKey   string
 	Model    string
 	BaseURL  string
-	Fallback bool // Claude only
+	Fallback bool   // Claude only
+	Effort   string // OpenAI-compatible APIs: low by default; none omits the parameter
 }
 
 // extractConfig reads the receipt reader settings. Claude without a key
@@ -183,6 +184,15 @@ func extractConfig() (ExtractConfig, error) {
 			errs = append(errs, errors.New("GEMINI_API_KEY is required with MAHLZEIT_EXTRACT_PROVIDER=gemini"))
 		}
 	case "openai":
+		x.Effort = env("MAHLZEIT_EXTRACT_EFFORT", "low")
+		if x.Effort == "" {
+			x.Effort = "low"
+		}
+		switch x.Effort {
+		case "low", "medium", "high", "none":
+		default:
+			errs = append(errs, errors.New("MAHLZEIT_EXTRACT_EFFORT must be low, medium, high or none"))
+		}
 		// Local servers such as Ollama need no key.
 		x.Enabled = true
 		if x.Model == "" {

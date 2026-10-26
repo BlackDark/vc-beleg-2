@@ -108,6 +108,17 @@ export const zProfileInput = z.object({
     ])
 });
 
+export const zReaderInfo = z.object({
+    effort: z.string(),
+    enabled: z.boolean(),
+    endpoint: z.string(),
+    fallback: z.boolean(),
+    model: z.string(),
+    provider: z.string(),
+    sequential: z.boolean(),
+    timeoutSeconds: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+});
+
 export const zReasonBody = z.object({
     reason: z.string().min(1).max(1000)
 });
@@ -396,6 +407,11 @@ export const zReopenMonthResponse = zMonth;
  * OK
  */
 export const zListRatesResponse = z.array(zValues);
+
+/**
+ * OK
+ */
+export const zGetReaderStatusResponse = zReaderInfo;
 
 export const zListReceiptsQuery = z.object({
     month: z.string().regex(/^([0-9]{4}-[0-9]{2})?$/).optional(),

@@ -52,6 +52,7 @@ type Config struct {
 	MaxUploadBytes int64
 	MaxPixels      int64
 	MaxPDFPages    int
+	ReaderInfo     ReaderInfo
 	ReaderLabel    string // provider and model of the receipt reader, for logs
 }
 

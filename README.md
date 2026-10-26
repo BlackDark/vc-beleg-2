@@ -19,6 +19,7 @@ The rules are simple until they aren't: one allowance per working day, at most â
 - **Receipt deletion**: delete mistaken or duplicate receipts with confirmation until they appear in an archived monthly report. Archived evidence stays protected, including after reopening a month.
 - **Multiple receipts per day**: use the highest checked receipt automatically, choose one explicitly, or combine receipts for the same meal.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.
+- **AI configuration at a glance**: provider, model, effort and timing information in Integrations; OpenAI-compatible readers default to low effort.
 - **Organized settings**: separate sections for company and allowance, account and appearance, integrations, and import log.
 - **Phone and desktop**: installable web app in German or English, from 360 px wide.
 

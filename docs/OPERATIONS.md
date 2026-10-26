@@ -25,6 +25,7 @@ All settings are environment variables. Secrets can also be read from a file: ap
 | `OPENAI_API_KEY` | – | OpenAI-compatible: API key; leave empty for local servers. |
 | `MAHLZEIT_EXTRACT_MODEL` | `claude-opus-5-5` / `gemini-flash-latest` / – | Model; required with `openai`. It must read images, and PDFs for PDF receipts. |
 | `MAHLZEIT_EXTRACT_BASE_URL` | provider's API | Another endpoint, e.g. `https://openrouter.ai/api/v1` or `http://ollama:11434/v1` (default for `openai`: `https://api.openai.com/v1`). |
+| `MAHLZEIT_EXTRACT_EFFORT` | `low` | OpenAI-compatible APIs: `low`, `medium`, `high`; `none` omits the reasoning effort parameter for models or endpoints that do not support it. Claude already uses low effort; Gemini uses its provider default. |
 | `MAHLZEIT_EXTRACT_FALLBACK` | `true` | Claude only: when Claude declines a receipt, the API retries it with a fallback model it picks. Turn off for models without server-side fallback. |
 | `MAHLZEIT_IMAP_HOST` | – | Enables the mail import, e.g. `imap.example.com` (TLS). |
 | `MAHLZEIT_IMAP_PORT` | `993` | IMAP TLS port. |
@@ -88,6 +89,7 @@ Settings → Import-Protokoll lists the last 90 days: every uploaded, mailed or 
 ## Receipt reading
 
 Receipt reading uses a durable queue in SQLite and processes one receipt at a time. The UI distinguishes queued, processing, processed and failed readings from the employee's `zu prüfen` / `geprüft` status. Restarting requeues interrupted readings; live processes do not need to survive for queued receipts to be picked up. Each reading has a three-minute timeout. A missing original file is marked failed rather than left queued. After failure, **Erneut lesen** queues one retry; repeating the request while queued or processing does not create another reading. A processed receipt still needs the employee's confirmation, and manual corrections take precedence over extracted values.
+Settings → Integrations shows the active provider, model, sanitized endpoint, reasoning effort and receipt timeout. The import log records actual request durations. OpenAI-compatible readers send `reasoning_effort=low` by default; set `MAHLZEIT_EXTRACT_EFFORT=none` if the endpoint rejects this parameter. Increasing effort may increase latency. The Claude reader also uses low effort. Gemini uses the model's default thinking behavior.
 
 Every new receipt is sent to the configured model, which returns date, total and merchant; the image leaves your server for this (except with a local model). Nothing counts until you check it. Rate limits and temporary API errors are retried automatically; with Claude, a declined receipt goes to a fallback model. Readings that still fail can be retried from the check screen, or you type the values.
 

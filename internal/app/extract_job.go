@@ -31,7 +31,7 @@ func (a *App) processExtraction(ctx context.Context, job extractionJob) {
 		err = errors.New("the receipt file could not be read")
 	} else {
 		a.Log.Info("extraction started", "receipt", job.id, "reader", a.Cfg.ReaderLabel, "mime", job.mime, "bytes", len(data))
-		readCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+		readCtx, cancel := context.WithTimeout(ctx, ReceiptReadingTimeout)
 		ex, err = a.Extractor.Extract(readCtx, job.mime, data)
 		cancel()
 	}
