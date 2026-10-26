@@ -100,7 +100,7 @@ Free tiers (Gemini, some OpenRouter models) may let the provider use receipts to
 
 ## Backup and restore
 
-Receipts and reports are evidence: payroll records must be kept for six years. Mahlzeit never deletes a checked receipt or a report.
+Receipts and reports are evidence: payroll records must be kept for six years. Receipts included in any archived monthly report cannot be deleted, even after reopening the month or changing the receipt. Reports are never deleted. Receipts never included in an archived report can be deleted with confirmation, including previously checked receipts. Receipt numbers are never reused.
 
 A copy of the live SQLite file alone is not a backup. Use the built-in command; it writes a consistent database snapshot (`VACUUM INTO`) and then copies receipts and reports:
 

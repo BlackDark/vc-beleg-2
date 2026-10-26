@@ -32,6 +32,7 @@ type Receipt struct {
 	Status     string      `json:"status" enum:"pending,checked"`
 	Source     string      `json:"source" enum:"upload,mail,folder"`
 	Number     string      `json:"number"`
+	Archived   bool        `json:"archived" doc:"included in an archived report, including previous versions"`
 	Filename   string      `json:"filename"`
 	Mime       string      `json:"mime"`
 	Pages      int         `json:"pages"`
@@ -278,7 +279,8 @@ func (a *App) CheckReceipt(ctx context.Context, u *User, id int64, in ReceiptInp
 		if !number.Valid {
 			year := a.now().Year()
 			var seq int
-			if err := tx.QueryRowContext(ctx, `SELECT coalesce(max(number_seq), 0) + 1 FROM receipts WHERE employee_id = ? AND number_year = ?`, u.EmployeeID, year).Scan(&seq); err != nil {
+			if err := tx.QueryRowContext(ctx, `INSERT INTO receipt_sequences(employee_id, year, last_seq) VALUES (?, ?, 1)
+                ON CONFLICT(employee_id, year) DO UPDATE SET last_seq = last_seq + 1 RETURNING last_seq`, u.EmployeeID, year).Scan(&seq); err != nil {
 				return err
 			}
 			if _, err := tx.ExecContext(ctx, `UPDATE receipts SET number = ?, number_year = ?, number_seq = ? WHERE id = ?`, fmt.Sprintf("B-%d-%04d", year, seq), year, seq, id); err != nil {
@@ -314,30 +316,6 @@ func (a *App) UncheckReceipt(ctx context.Context, u *User, id int64) (*Receipt, 
 	return a.GetReceipt(ctx, u, id)
 }
 
-// DeleteReceipt removes a receipt that was never checked (wrong upload,
-// duplicate). Checked receipts carry a number and stay as evidence.
-func (a *App) DeleteReceipt(ctx context.Context, u *User, id int64) error {
-	var key, preview string
-	err := a.tx(ctx, func(tx *sql.Tx) error {
-		var number sql.NullString
-		if err := tx.QueryRowContext(ctx, `SELECT number, storage_key, preview_key FROM receipts WHERE id = ? AND employee_id = ?`, id, u.EmployeeID).Scan(&number, &key, &preview); err != nil {
-			return notFound(err)
-		}
-		if number.Valid {
-			return Invalid("receipt.numbered", "a receipt that was checked once stays as evidence")
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM receipts WHERE id = ?`, id); err != nil {
-			return err
-		}
-		return a.audit(ctx, tx, u.ID, "receipt", id, "delete", "", nil)
-	})
-	if err == nil {
-		a.Files.Remove(key)
-		a.Files.Remove(preview)
-	}
-	return err
-}
-
 // GetReceipt loads one owned receipt.
 func (a *App) GetReceipt(ctx context.Context, u *User, id int64) (*Receipt, error) {
 	list, err := a.loadReceipts(ctx, u.EmployeeID, "r.id = ?", id)
@@ -364,7 +342,7 @@ func (a *App) ListReceipts(ctx context.Context, u *User, month, status string) (
 }
 
 func (a *App) loadReceipts(ctx context.Context, employeeID int64, where string, args ...any) ([]*Receipt, error) {
-	rows, err := a.DB.QueryContext(ctx, `SELECT r.id, r.status, r.source, coalesce(r.number, ''), r.filename, r.mime, r.pages, coalesce(r.date, ''), coalesce(r.total, 0), r.merchant, r.note, r.mail_from, r.extraction, r.extraction_json, r.created_at, coalesce(r.checked_at, ''),
+	rows, err := a.DB.QueryContext(ctx, `SELECT r.id, r.status, r.source, coalesce(r.number, ''), r.filename, r.mime, r.pages, coalesce(r.date, ''), coalesce(r.total, 0), r.merchant, r.note, r.mail_from, r.extraction, r.extraction_json, r.created_at, coalesce(r.checked_at, ''), `+archivedReceiptSQL+`,
 		EXISTS (SELECT 1 FROM receipts d WHERE d.employee_id = r.employee_id AND d.sha256 = r.sha256 AND d.id <> r.id),
 		coalesce((SELECT m.status <> 'open' FROM months m WHERE m.employee_id = r.employee_id AND m.month = substr(r.date, 1, 7)), 0)
 		FROM receipts r WHERE r.employee_id = ? AND `+where+` ORDER BY r.date IS NOT NULL, r.date DESC, r.id DESC`, append([]any{employeeID}, args...)...)
@@ -378,7 +356,7 @@ func (a *App) loadReceipts(ctx context.Context, employeeID int64, where string, 
 		r := &Receipt{}
 		var extracted string
 		var dup, closed bool
-		if err := rows.Scan(&r.ID, &r.Status, &r.Source, &r.Number, &r.Filename, &r.Mime, &r.Pages, &r.Date, &r.Total, &r.Merchant, &r.Note, &r.MailFrom, &r.Extraction, &extracted, &r.CreatedAt, &r.CheckedAt, &dup, &closed); err != nil {
+		if err := rows.Scan(&r.ID, &r.Status, &r.Source, &r.Number, &r.Filename, &r.Mime, &r.Pages, &r.Date, &r.Total, &r.Merchant, &r.Note, &r.MailFrom, &r.Extraction, &extracted, &r.CreatedAt, &r.CheckedAt, &r.Archived, &dup, &closed); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(extracted), &r.Extracted)

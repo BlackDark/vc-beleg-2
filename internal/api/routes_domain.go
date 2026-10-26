@@ -68,7 +68,7 @@ func (s *Server) registerReceipts(api huma.API) {
 		func(ctx context.Context, u *app.User, in *idIn) (*body[*app.Receipt], error) {
 			return wrap(s.app.RetryExtraction(ctx, u, in.ID))
 		})
-	authed(s, api, huma.Operation{OperationID: "deleteReceipt", Method: http.MethodDelete, Path: "/api/receipts/{id}", Tags: tags, DefaultStatus: 204, Summary: "Delete a receipt that was never checked"},
+	authed(s, api, huma.Operation{OperationID: "deleteReceipt", Method: http.MethodDelete, Path: "/api/receipts/{id}", Tags: tags, DefaultStatus: 204, Summary: "Delete a receipt never included in an archived report"},
 		func(ctx context.Context, u *app.User, in *idIn) (*empty, error) {
 			return &empty{}, s.app.DeleteReceipt(ctx, u, in.ID)
 		})

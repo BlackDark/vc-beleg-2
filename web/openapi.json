@@ -492,6 +492,10 @@
       "Receipt": {
         "additionalProperties": false,
         "properties": {
+          "archived": {
+            "description": "included in an archived report, including previous versions",
+            "type": "boolean"
+          },
           "checkedAt": {
             "type": "string"
           },
@@ -571,6 +575,7 @@
           "status",
           "source",
           "number",
+          "archived",
           "filename",
           "mime",
           "pages",
@@ -1800,7 +1805,7 @@
             "session": []
           }
         ],
-        "summary": "Delete a receipt that was never checked",
+        "summary": "Delete a receipt never included in an archived report",
         "tags": [
           "receipts"
         ]

@@ -183,6 +183,10 @@ export type ReasonBody = {
 };
 
 export type Receipt = {
+    /**
+     * included in an archived report, including previous versions
+     */
+    archived: boolean;
     checkedAt: string;
     createdAt: string;
     date: string;

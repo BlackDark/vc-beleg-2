@@ -313,7 +313,7 @@ export const uploadReceiptMutation = (options?: Partial<Options<UploadReceiptDat
 };
 
 /**
- * Delete a receipt that was never checked
+ * Delete a receipt never included in an archived report
  */
 export const deleteReceiptMutation = (options?: Partial<Options<DeleteReceiptData>>): UseMutationOptions<DeleteReceiptResponse, DeleteReceiptError, Options<DeleteReceiptData>> => {
     const mutationOptions: UseMutationOptions<DeleteReceiptResponse, DeleteReceiptError, Options<DeleteReceiptData>> = {

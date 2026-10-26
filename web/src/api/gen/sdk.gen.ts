@@ -253,7 +253,7 @@ export const uploadReceipt = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
- * Delete a receipt that was never checked
+ * Delete a receipt never included in an archived report
  */
 export const deleteReceipt = <ThrowOnError extends boolean = false>(options: Options<DeleteReceiptData, ThrowOnError>): RequestResult<DeleteReceiptResponses, DeleteReceiptErrors, ThrowOnError> => (options.client ?? client).delete<DeleteReceiptResponses, DeleteReceiptErrors, ThrowOnError>({
     responseValidator: async (data) => await zDeleteReceiptResponse.parseAsync(data),
