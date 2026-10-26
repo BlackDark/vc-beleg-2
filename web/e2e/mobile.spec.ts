@@ -14,6 +14,9 @@ test("every screen fits 360 px without horizontal scrolling", async ({ page }) =
     ["/month", /Zusammenfassung/],
     ["/reports", /Monatsberichte zum Archivieren/],
     ["/settings", /Firma und Versteuerung/],
+    ["/settings?section=account", /^Profil$/],
+    ["/settings?section=integrations", /^Mail-Eingang$/],
+    ["/settings?section=imports", /^Import-Protokoll$/],
     ["/receipts/1", /Geprüft am/],
   ];
   for (const [path, marker] of screens) {

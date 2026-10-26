@@ -9,8 +9,20 @@ test("switching to English translates the UI and keeps the choice", async ({ pag
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto("/settings");
+  await page.getByRole("link", { name: "Integrationen", exact: true }).click();
+  await expect(page.getByText("Mail-Eingang", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ordner-Import", { exact: true })).toBeVisible();
+  await expect(page.locator("#company")).toHaveCount(0);
+  await page.getByRole("link", { name: "Import-Protokoll", exact: true }).click();
+  await expect(page.getByText("importiert")).toHaveCount(5);
+  await page.goBack();
+  await expect(page.getByText("Mail-Eingang", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Konto & Darstellung", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Konto & Darstellung", exact: true }).click();
+  await expect(page.locator("#company")).toHaveCount(0);
+  await page.reload();
   await page.selectOption("#language", "en");
-  await expect(page.locator("main").getByText("Company and taxation")).toBeVisible();
+  await expect(page.locator("main").getByText("Profile", { exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
   await page.goto("/");

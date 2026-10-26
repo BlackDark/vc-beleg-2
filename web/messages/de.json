@@ -219,5 +219,10 @@
   "log_duplicate": "schon vorhanden",
   "log_rejected": "abgelehnt",
   "log_read": "ausgelesen",
-  "log_read_failed": "Auslesen fehlgeschlagen"
+  "log_read_failed": "Auslesen fehlgeschlagen",
+  "settings_section_company": "Firma & Zuschuss",
+  "settings_section_account": "Konto & Darstellung",
+  "settings_section_integrations": "Integrationen",
+  "settings_section_imports": "Import-Protokoll",
+  "settings_navigation": "Einstellungsbereiche"
 }

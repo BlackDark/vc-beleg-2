@@ -123,7 +123,8 @@ test("setup, receipts, check, close month and download the report", async ({ pag
 
   // All five uploads remain in the import log, including the deleted receipt.
   await page.goto("/settings");
-  await expect(page.getByText("Import-Protokoll")).toBeVisible();
+  await page.getByRole("link", { name: "Import-Protokoll", exact: true }).click();
+  await expect(page.getByText("Import-Protokoll").last()).toBeVisible();
   await expect(page.getByText("importiert")).toHaveCount(5);
 });
 

@@ -219,5 +219,10 @@
   "log_duplicate": "already there",
   "log_rejected": "rejected",
   "log_read": "read",
-  "log_read_failed": "reading failed"
+  "log_read_failed": "reading failed",
+  "settings_section_company": "Company & allowance",
+  "settings_section_account": "Account & appearance",
+  "settings_section_integrations": "Integrations",
+  "settings_section_imports": "Import log",
+  "settings_navigation": "Settings sections"
 }
