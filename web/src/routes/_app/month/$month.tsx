@@ -6,19 +6,21 @@ import {
   closeMonthMutation,
   combineDayMutation,
   getMonthOptions,
+  listReceiptsOptions,
   reopenMonthMutation,
+  selectDayReceiptMutation,
   setMonthPaidMutation,
 } from "@/api/gen/@tanstack/react-query.gen";
-import type { Day, Month } from "@/api/gen/types.gen";
+import type { Day, Month, Receipt } from "@/api/gen/types.gen";
 import { Money, MonthStatusBadge, PageHeader, Row, taxModelText, warningText } from "@/components/common";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Field, Input } from "@/components/ui/input";
+import { Field, Input, Select } from "@/components/ui/input";
 import { Alert, EmptyState, Skeleton } from "@/components/ui/misc";
-import { formatDate, formatMonth, formatWeekday, todayISO } from "@/lib/format";
+import { formatCents, formatDate, formatMonth, formatWeekday, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
@@ -63,6 +65,9 @@ function MonthView({ month: mo }: { month: Month }) {
   };
   const close = useMutation({ ...closeMonthMutation(), onSuccess });
   const combine = useMutation({ ...combineDayMutation(), onSuccess });
+  const select = useMutation({ ...selectDayReceiptMutation(), onSuccess });
+  const receipts = useQuery(listReceiptsOptions({ query: { month: mo.month, status: "checked" } }));
+  const choosing = combine.isPending || select.isPending || close.isPending;
   const t = mo.result.totals;
   const open = mo.status === "open";
   const latest = mo.reports[0];
@@ -105,7 +110,12 @@ function MonthView({ month: mo }: { month: Month }) {
                   key={d.date}
                   day={d}
                   editable={open}
-                  onCombine={(combined) => combine.mutate({ body: { date: d.date, combined } })}
+                  receipts={receipts.data}
+                  busy={choosing}
+                  onChoose={(choice) => {
+                    if (choice === "combined") combine.mutate({ body: { date: d.date, combined: true } });
+                    else select.mutate({ body: { date: d.date, receiptId: Number(choice) } });
+                  }}
                 />
               ))}
             </ul>
@@ -158,7 +168,7 @@ function MonthView({ month: mo }: { month: Month }) {
               {open ? (
                 <Button
                   size="lg"
-                  disabled={mo.blockers.length > 0 || close.isPending}
+                  disabled={mo.blockers.length > 0 || choosing}
                   onClick={() => {
                     if (window.confirm(m.close_confirm())) close.mutate({ path: { month: mo.month } });
                   }}
@@ -198,13 +208,19 @@ function MonthView({ month: mo }: { month: Month }) {
 function DayRow({
   day: d,
   editable,
-  onCombine,
+  receipts,
+  busy,
+  onChoose,
 }: {
   day: Day;
   editable: boolean;
-  onCombine: (combined: boolean) => void;
+  receipts: Receipt[] | undefined;
+  busy: boolean;
+  onChoose: (choice: string) => void;
 }) {
-  const several = d.receiptIds.length + d.ignored.length > 1;
+  const ids = [...d.receiptIds, ...d.ignored].sort((a, b) => a - b);
+  const several = ids.length > 1;
+
   return (
     <li className={cn("grid gap-1 px-4 py-3", !d.counted && "text-muted-foreground")}>
       <div className="flex items-center justify-between gap-3">
@@ -219,14 +235,14 @@ function DayRow({
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        {[...d.receiptIds, ...d.ignored].map((id, i) => (
+        {ids.map((id) => (
           <Link
             key={id}
             to="/receipts/$id"
             params={{ id: String(id) }}
-            className={cn("underline", d.ignored.includes(id) && "line-through")}
+            className={cn("max-w-full break-words underline", d.ignored.includes(id) && "line-through")}
           >
-            {m.receipt_n({ n: String(i + 1) })}
+            {receiptLabel(id, receipts)}
           </Link>
         ))}
         {d.warnings
@@ -236,15 +252,62 @@ function DayRow({
               {w === "holiday" && d.holiday ? d.holiday : warningText(w)}
             </span>
           ))}
-        {several && editable ? (
-          <button type="button" className="text-primary underline" onClick={() => onCombine(!d.combined)}>
-            {d.combined ? m.uncombine() : m.combine()}
-          </button>
-        ) : several ? (
-          <span>{d.combined ? m.combined() : m.highest_counts()}</span>
-        ) : null}
       </div>
+      {several || d.selectedReceiptId ? (
+        <DayReceiptSelection
+          day={d}
+          editable={editable}
+          busy={busy}
+          receipts={receipts}
+          onChoose={onChoose}
+        />
+      ) : null}
     </li>
+  );
+}
+
+function receiptLabel(id: number, receipts: Receipt[] | undefined): string {
+  const receipt = receipts?.find((r) => r.id === id);
+  return receipt
+    ? `${receipt.number} · ${receipt.merchant || receipt.filename} · ${formatCents(receipt.total)}`
+    : m.receipt_n({ n: String(id) });
+}
+
+function DayReceiptSelection({
+  day: d,
+  editable,
+  busy,
+  receipts,
+  onChoose,
+}: {
+  day: Day;
+  editable: boolean;
+  busy: boolean;
+  receipts: Receipt[] | undefined;
+  onChoose: (choice: string) => void;
+}) {
+  const ids = [...d.receiptIds, ...d.ignored].sort((a, b) => a - b);
+  return (
+    <Field label={m.receipt_selection()} htmlFor={`receipt-choice-${d.date}`} className="mt-2">
+      <Select
+        id={`receipt-choice-${d.date}`}
+        aria-label={m.receipt_selection_for_day({ date: formatDate(d.date) })}
+        value={d.combined ? "combined" : String(d.selectedReceiptId ?? 0)}
+        disabled={!editable || busy || !receipts}
+        onChange={(e) => onChoose(e.target.value)}
+      >
+        <option value="0">{m.receipt_selection_auto()}</option>
+        <option value="combined" disabled={ids.length < 2}>
+          {m.combine()}
+        </option>
+        {ids.map((id) => (
+          <option key={id} value={id}>
+            {receiptLabel(id, receipts)}
+          </option>
+        ))}
+      </Select>
+      {d.combined ? <p className="text-xs text-warning">{m.combine_warning()}</p> : null}
+    </Field>
   );
 }
 

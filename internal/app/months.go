@@ -78,19 +78,13 @@ func (a *App) compute(ctx context.Context, q querier, s *employeeSettings, month
 		in.Receipts = append(in.Receipts, r)
 	}
 	rows.Close()
-	rows, err = q.QueryContext(ctx, `SELECT date FROM combined_days WHERE employee_id = ? AND date LIKE ?`, s.EmployeeID, month+"-%")
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return calc.Result{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var d string
-		if err := rows.Scan(&d); err != nil {
-			return calc.Result{}, err
-		}
-		in.Combined[d] = true
+	if err := loadDayChoices(ctx, q, s.EmployeeID, &in); err != nil {
+		return calc.Result{}, err
 	}
-	return calc.Compute(in), rows.Err()
+	return calc.Compute(in), nil
 }
 
 func (a *App) reportRefs(ctx context.Context, q querier, monthID int64) ([]ReportRef, error) {
@@ -171,6 +165,9 @@ func (a *App) SetCombined(ctx context.Context, u *User, date string, combined bo
 	}
 	err := a.tx(ctx, func(tx *sql.Tx) error {
 		if err := monthOpen(ctx, tx, u.EmployeeID, date[:7]); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM selected_receipts WHERE employee_id = ? AND date = ?`, u.EmployeeID, date); err != nil {
 			return err
 		}
 		q := `DELETE FROM combined_days WHERE employee_id = ? AND date = ?`

@@ -150,3 +150,23 @@ func TestChurchTax(t *testing.T) {
 		t.Errorf("totals = %+v", res.Totals)
 	}
 }
+
+func TestManuallySelectedReceiptDeterminesMealDay(t *testing.T) {
+	in := Input{Month: "2026-10", Model: ModelFlat, Values: v2026,
+		Receipts: []Receipt{{ID: 1, Date: "2026-10-05", Total: 900}, {ID: 2, Date: "2026-10-05", Total: 320}},
+		Selected: map[string]int64{"2026-10-05": 2}}
+	d := Compute(in).Days[0]
+	if d.Total != 320 || d.Allowance != 320 || d.SelectedReceiptID != 2 || !slices.Equal(d.ReceiptIDs, []int64{2}) || !slices.Equal(d.Ignored, []int64{1}) || d.Combined {
+		t.Fatalf("manual choice: %+v", d)
+	}
+}
+
+func TestMissingSelectedReceiptFallsBackToHighest(t *testing.T) {
+	in := Input{Month: "2026-10", Model: ModelFlat, Values: v2026,
+		Receipts: []Receipt{{ID: 1, Date: "2026-10-05", Total: 900}, {ID: 2, Date: "2026-10-06", Total: 320}},
+		Selected: map[string]int64{"2026-10-05": 2}}
+	d := Compute(in).Days[0]
+	if d.SelectedReceiptID != 0 || d.Total != 900 || !slices.Equal(d.ReceiptIDs, []int64{1}) {
+		t.Fatalf("ineligible choice: %+v", d)
+	}
+}

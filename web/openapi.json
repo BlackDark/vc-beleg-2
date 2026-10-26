@@ -59,6 +59,11 @@
             },
             "type": "array"
           },
+          "selectedReceiptId": {
+            "description": "explicit choice; 0 means automatic or combined",
+            "format": "int64",
+            "type": "integer"
+          },
           "taxFree": {
             "format": "int64",
             "type": "integer"
@@ -81,6 +86,7 @@
         },
         "required": [
           "date",
+          "selectedReceiptId",
           "receiptIds",
           "ignored",
           "combined",
@@ -699,6 +705,26 @@
         ],
         "type": "object"
       },
+      "SelectReceiptBody": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "receiptId": {
+            "description": "checked receipt of this date; 0 restores automatic highest",
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "receiptId"
+        ],
+        "type": "object"
+      },
       "SessionInfo": {
         "additionalProperties": false,
         "properties": {
@@ -1027,6 +1053,52 @@
           }
         ],
         "summary": "Combine the receipts of a date into one meal, or undo it",
+        "tags": [
+          "months"
+        ]
+      }
+    },
+    "/api/days/select": {
+      "post": {
+        "operationId": "selectDayReceipt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectReceiptBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Month"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Choose one checked receipt for the day, or restore automatic selection",
         "tags": [
           "months"
         ]

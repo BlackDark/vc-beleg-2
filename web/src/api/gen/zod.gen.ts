@@ -16,6 +16,7 @@ export const zDay = z.object({
     ignored: z.array(z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })),
     receiptIds: z.array(z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })),
     rules: z.array(z.string()),
+    selectedReceiptId: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     taxFree: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     taxable: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     total: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
@@ -168,6 +169,11 @@ export const zMonthSummary = z.object({
     ])
 });
 
+export const zSelectReceiptBody = z.object({
+    date: z.iso.date(),
+    receiptId: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+});
+
 export const zSettings = z.object({
     churchTaxBp: z.coerce.bigint().gte(BigInt(0)).lte(BigInt(1000)),
     companyAddress: z.string().max(500),
@@ -282,6 +288,13 @@ export const zCombineDayBody = zCombineBody;
  * OK
  */
 export const zCombineDayResponse = zMonth;
+
+export const zSelectDayReceiptBody = zSelectReceiptBody;
+
+/**
+ * OK
+ */
+export const zSelectDayReceiptResponse = zMonth;
 
 /**
  * OK

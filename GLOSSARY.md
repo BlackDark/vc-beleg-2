@@ -53,7 +53,10 @@ The employer's payment for one meal on one working day, capped by the receipt to
 _Avoid_: Zulage, Essensgeld, Pauschale
 
 **Meal day** (Essenstag):
-A date with at least one checked receipt. Its total is the highest receipt of that day, or the sum of all of them when the employee combines them.
+A date with at least one checked receipt. Its total is the highest receipt of that day by default, a receipt explicitly selected by the employee, or the sum of all receipts when the employee combines them.
+
+**Receipt selection** (Belegauswahl):
+The employee's choice of which checked receipts form a meal day: automatically use the highest receipt, explicitly choose one receipt, or combine all receipts of that day. Other receipts remain available as evidence.
 
 **Counted day** (angesetzter Tag):
 A meal day that earns an allowance in its month. Above the day limit, the meal days with the highest totals count; the rest are **not counted** (nicht angesetzt).

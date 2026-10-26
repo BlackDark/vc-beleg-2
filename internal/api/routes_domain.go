@@ -103,6 +103,11 @@ type paidBody struct {
 	PaidOn string `json:"paidOn" doc:"YYYY-MM-DD; empty clears it" maxLength:"10"`
 }
 
+type selectReceiptBody struct {
+	Date      string `json:"date" format:"date"`
+	ReceiptID int64  `json:"receiptId" minimum:"0" doc:"checked receipt of this date; 0 restores automatic highest"`
+}
+
 func (s *Server) registerMonths(api huma.API) {
 	tags := []string{"months"}
 	authed(s, api, huma.Operation{OperationID: "listMonths", Method: http.MethodGet, Path: "/api/months", Tags: tags},
@@ -116,6 +121,10 @@ func (s *Server) registerMonths(api huma.API) {
 	authed(s, api, huma.Operation{OperationID: "combineDay", Method: http.MethodPost, Path: "/api/days/combine", Tags: tags, Summary: "Combine the receipts of a date into one meal, or undo it"},
 		func(ctx context.Context, u *app.User, in *body[combineBody]) (*body[*app.Month], error) {
 			return wrap(s.app.SetCombined(ctx, u, in.Body.Date, in.Body.Combined))
+		})
+	authed(s, api, huma.Operation{OperationID: "selectDayReceipt", Method: http.MethodPost, Path: "/api/days/select", Tags: tags, Summary: "Choose one checked receipt for the day, or restore automatic selection"},
+		func(ctx context.Context, u *app.User, in *body[selectReceiptBody]) (*body[*app.Month], error) {
+			return wrap(s.app.SetSelectedReceipt(ctx, u, in.Body.Date, in.Body.ReceiptID))
 		})
 	authed(s, api, huma.Operation{OperationID: "closeMonth", Method: http.MethodPost, Path: "/api/months/{month}/close", Tags: tags, Summary: "Freeze the month and generate the next report version"},
 		func(ctx context.Context, u *app.User, in *monthIn) (*body[*app.Month], error) {

@@ -2,8 +2,8 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckReceiptData, CheckReceiptErrors, CheckReceiptResponses, CloseMonthData, CloseMonthErrors, CloseMonthResponses, CombineDayData, CombineDayErrors, CombineDayResponses, DeleteReceiptData, DeleteReceiptErrors, DeleteReceiptResponses, GetFolderStatusData, GetFolderStatusErrors, GetFolderStatusResponses, GetImportLogData, GetImportLogErrors, GetImportLogResponses, GetMailStatusData, GetMailStatusErrors, GetMailStatusResponses, GetMeData, GetMeErrors, GetMeResponses, GetMonthData, GetMonthErrors, GetMonthResponses, GetReceiptData, GetReceiptErrors, GetReceiptFileData, GetReceiptFileErrors, GetReceiptFileResponses, GetReceiptPreviewData, GetReceiptPreviewErrors, GetReceiptPreviewResponses, GetReceiptResponses, GetReportPdfData, GetReportPdfErrors, GetReportPdfResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, ListMonthsData, ListMonthsErrors, ListMonthsResponses, ListRatesData, ListRatesErrors, ListRatesResponses, ListReceiptsData, ListReceiptsErrors, ListReceiptsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, ReopenMonthData, ReopenMonthErrors, ReopenMonthResponses, RetryExtractionData, RetryExtractionErrors, RetryExtractionResponses, SaveSettingsData, SaveSettingsErrors, SaveSettingsResponses, SetMonthPaidData, SetMonthPaidErrors, SetMonthPaidResponses, SetupData, SetupErrors, SetupResponses, UncheckReceiptData, UncheckReceiptErrors, UncheckReceiptResponses, UpdateMeData, UpdateMeErrors, UpdateMeResponses, UpdateReceiptData, UpdateReceiptErrors, UpdateReceiptResponses, UploadReceiptData, UploadReceiptErrors, UploadReceiptResponses } from './types.gen';
-import { zChangePasswordResponse, zCheckReceiptResponse, zCloseMonthResponse, zCombineDayResponse, zDeleteReceiptResponse, zGetFolderStatusResponse, zGetImportLogResponse, zGetMailStatusResponse, zGetMeResponse, zGetMonthResponse, zGetReceiptFileResponse, zGetReceiptPreviewResponse, zGetReceiptResponse, zGetReportPdfResponse, zGetSessionResponse, zGetSettingsResponse, zListMonthsResponse, zListRatesResponse, zListReceiptsResponse, zLoginResponse, zLogoutResponse, zReopenMonthResponse, zRetryExtractionResponse, zSaveSettingsResponse, zSetMonthPaidResponse, zSetupResponse, zUncheckReceiptResponse, zUpdateMeResponse, zUpdateReceiptResponse, zUploadReceiptResponse } from './zod.gen';
+import type { ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckReceiptData, CheckReceiptErrors, CheckReceiptResponses, CloseMonthData, CloseMonthErrors, CloseMonthResponses, CombineDayData, CombineDayErrors, CombineDayResponses, DeleteReceiptData, DeleteReceiptErrors, DeleteReceiptResponses, GetFolderStatusData, GetFolderStatusErrors, GetFolderStatusResponses, GetImportLogData, GetImportLogErrors, GetImportLogResponses, GetMailStatusData, GetMailStatusErrors, GetMailStatusResponses, GetMeData, GetMeErrors, GetMeResponses, GetMonthData, GetMonthErrors, GetMonthResponses, GetReceiptData, GetReceiptErrors, GetReceiptFileData, GetReceiptFileErrors, GetReceiptFileResponses, GetReceiptPreviewData, GetReceiptPreviewErrors, GetReceiptPreviewResponses, GetReceiptResponses, GetReportPdfData, GetReportPdfErrors, GetReportPdfResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, ListMonthsData, ListMonthsErrors, ListMonthsResponses, ListRatesData, ListRatesErrors, ListRatesResponses, ListReceiptsData, ListReceiptsErrors, ListReceiptsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, ReopenMonthData, ReopenMonthErrors, ReopenMonthResponses, RetryExtractionData, RetryExtractionErrors, RetryExtractionResponses, SaveSettingsData, SaveSettingsErrors, SaveSettingsResponses, SelectDayReceiptData, SelectDayReceiptErrors, SelectDayReceiptResponses, SetMonthPaidData, SetMonthPaidErrors, SetMonthPaidResponses, SetupData, SetupErrors, SetupResponses, UncheckReceiptData, UncheckReceiptErrors, UncheckReceiptResponses, UpdateMeData, UpdateMeErrors, UpdateMeResponses, UpdateReceiptData, UpdateReceiptErrors, UpdateReceiptResponses, UploadReceiptData, UploadReceiptErrors, UploadReceiptResponses } from './types.gen';
+import { zChangePasswordResponse, zCheckReceiptResponse, zCloseMonthResponse, zCombineDayResponse, zDeleteReceiptResponse, zGetFolderStatusResponse, zGetImportLogResponse, zGetMailStatusResponse, zGetMeResponse, zGetMonthResponse, zGetReceiptFileResponse, zGetReceiptPreviewResponse, zGetReceiptResponse, zGetReportPdfResponse, zGetSessionResponse, zGetSettingsResponse, zListMonthsResponse, zListRatesResponse, zListReceiptsResponse, zLoginResponse, zLogoutResponse, zReopenMonthResponse, zRetryExtractionResponse, zSaveSettingsResponse, zSelectDayReceiptResponse, zSetMonthPaidResponse, zSetupResponse, zUncheckReceiptResponse, zUpdateMeResponse, zUpdateReceiptResponse, zUploadReceiptResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -30,6 +30,24 @@ export const combineDay = <ThrowOnError extends boolean = false>(options: Option
             type: 'apiKey'
         }],
     url: '/api/days/combine',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Choose one checked receipt for the day, or restore automatic selection
+ */
+export const selectDayReceipt = <ThrowOnError extends boolean = false>(options: Options<SelectDayReceiptData, ThrowOnError>): RequestResult<SelectDayReceiptResponses, SelectDayReceiptErrors, ThrowOnError> => (options.client ?? client).post<SelectDayReceiptResponses, SelectDayReceiptErrors, ThrowOnError>({
+    responseValidator: async (data) => await zSelectDayReceiptResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'mahlzeit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/days/select',
     ...options,
     headers: {
         'Content-Type': 'application/json',

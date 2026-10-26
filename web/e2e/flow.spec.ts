@@ -60,7 +60,7 @@ test("setup, receipts, check, close month and download the report", async ({ pag
     .getByTestId("receipt-input")
     .first()
     .setInputFiles(
-      [1, 2, 3].map((n) => ({ name: `bon-${n}.png`, mimeType: "image/png", buffer: receiptPng(n) })),
+      [1, 2, 3, 4].map((n) => ({ name: `bon-${n}.png`, mimeType: "image/png", buffer: receiptPng(n) })),
     );
   await expect(page).toHaveURL(/\/receipts\/\d+/);
 
@@ -69,13 +69,16 @@ test("setup, receipts, check, close month and download the report", async ({ pag
     ["05", "7,85"],
     ["06", "9,10"],
     ["07", "6,00"],
+    ["05", "3,20"],
   ]) {
     await expect(page.locator("#date")).toBeVisible();
-    checkedReceipts.push(page.url());
+    const receiptURL = page.url();
+    checkedReceipts.push(receiptURL);
     await page.fill("#date", `${month}-${day}`);
     await page.fill("#total", total!);
     await page.fill("#merchant", "REWE");
     await page.getByRole("button", { name: "Prüfen & weiter" }).click();
+    await expect(page).not.toHaveURL(receiptURL);
     await expect(page.getByText("Beleg geprüft").first()).toBeVisible();
   }
   await expect(page).toHaveURL(/\/receipts$/);
@@ -83,7 +86,23 @@ test("setup, receipts, check, close month and download the report", async ({ pag
   // 7,67 + 7,67 + 6,00 (the receipt caps the allowance)
   await page.goto(`/month/${month}`);
   await expect(page.getByText("21,34 €").first()).toBeVisible();
+  const choice = page.getByRole("combobox", { name: `Belegauswahl für ${formatDay(month, "05")}` });
+  await expect(choice).toBeVisible({ timeout: 5000 });
+  const lowReceiptID = checkedReceipts[3]!.split("/").at(-1)!;
+  await choice.selectOption(lowReceiptID);
+  await expect(page.getByText("16,87 €").first()).toBeVisible();
+  await page.reload();
+  await expect(choice).toHaveValue(lowReceiptID);
+  await choice.selectOption("combined");
+  await expect(page.getByText("21,34 €").first()).toBeVisible();
+  await expect(choice).toHaveValue("combined");
+  await choice.selectOption("0");
+  await expect(choice).toHaveValue("0");
+  await choice.selectOption(lowReceiptID);
+  await expect(page.getByText("16,87 €").first()).toBeVisible();
   await page.getByRole("button", { name: "Monat abschließen" }).click();
+  await expect(choice).toBeDisabled();
+  await expect(choice).toHaveValue(lowReceiptID);
   await expect(page.getByText("abgeschlossen").first()).toBeVisible();
 
   const download = page.waitForEvent("download");
@@ -102,8 +121,13 @@ test("setup, receipts, check, close month and download the report", async ({ pag
   await page.goto("/reports");
   await expect(page.getByText(/v1 ·/)).toBeVisible();
 
-  // All four uploads remain in the import log, including the deleted receipt.
+  // All five uploads remain in the import log, including the deleted receipt.
   await page.goto("/settings");
   await expect(page.getByText("Import-Protokoll")).toBeVisible();
-  await expect(page.getByText("importiert")).toHaveCount(4);
+  await expect(page.getByText("importiert")).toHaveCount(5);
 });
+
+function formatDay(month: string, day: string): string {
+  const [year, monthNumber] = month.split("-");
+  return `${day}.${monthNumber}.${year}`;
+}

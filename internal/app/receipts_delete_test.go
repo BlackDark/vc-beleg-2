@@ -101,7 +101,7 @@ func TestReceiptNumbersContinueAfterUpgradingAndDeleting(t *testing.T) {
 	r = must(a.CheckReceipt(ctx, u, r.ID, ReceiptInput{Date: "2026-10-05", Total: 500}))
 	// Recreate the pre-counter schema as an upgrade fixture. Assertions below
 	// observe only the app's public receipt operations and assigned numbers.
-	if _, err := a.DB.ExecContext(ctx, `DROP TABLE receipt_sequences; DELETE FROM goose_db_version WHERE version_id = 4`); err != nil {
+	if _, err := a.DB.ExecContext(ctx, `DROP TRIGGER clear_ineligible_receipt_selection; DROP TABLE selected_receipts; DROP TABLE receipt_sequences; DELETE FROM goose_db_version WHERE version_id >= 4`); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.DB.Close(); err != nil {

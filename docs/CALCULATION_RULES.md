@@ -23,7 +23,7 @@ Later years are added as rows; a missing year blocks the calculation of that yea
 | R7 | Model B: parts as in R6, the taxable part taxed individually through payroll. | § 8 Abs. 2 EStG |
 | R8 | Model C: allowance ≤ min(receipt total, top-up); the employee's own share (receipt − allowance) reduces the benefit value; taxable = min(allowance, benefit value − own share), taxed through payroll. Receipt ≥ benefit value + allowance → nothing taxable. | R 8.1 Abs. 7 Nr. 4 LStR |
 
-Days: the receipts of one date form one meal day (highest receipt, or all of them when combined); above the day limit the days with the highest totals count, ties to the earlier date.
+Days: the checked receipts of one date form one meal day (highest receipt by default, one explicitly selected receipt, or all of them when combined); above the day limit the days with the highest totals count, ties to the earlier date. Receipt selection changes only which receipt total is used; allowance caps, tax models and the day limit remain the same. Selecting one receipt, automatic selection and combining are mutually exclusive. Unchecking, deleting or moving the selected receipt to another date restores automatic selection for its old date. Closed reports retain their frozen choice and amounts.
 
 ## Sources
 

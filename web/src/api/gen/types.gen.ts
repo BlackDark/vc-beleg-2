@@ -24,6 +24,10 @@ export type Day = {
      */
     receiptIds: Array<number>;
     rules: Array<string>;
+    /**
+     * explicit choice; 0 means automatic or combined
+     */
+    selectedReceiptId: number;
     taxFree: number;
     taxable: number;
     total: number;
@@ -246,6 +250,14 @@ export type Result = {
     values?: Values;
 };
 
+export type SelectReceiptBody = {
+    date: string;
+    /**
+     * checked receipt of this date; 0 restores automatic highest
+     */
+    receiptId: number;
+};
+
 export type SessionInfo = {
     /**
      * no account exists and password login is on, so /setup can create one
@@ -357,6 +369,31 @@ export type CombineDayResponses = {
 };
 
 export type CombineDayResponse = CombineDayResponses[keyof CombineDayResponses];
+
+export type SelectDayReceiptData = {
+    body: SelectReceiptBody;
+    path?: never;
+    query?: never;
+    url: '/api/days/select';
+};
+
+export type SelectDayReceiptErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type SelectDayReceiptError = SelectDayReceiptErrors[keyof SelectDayReceiptErrors];
+
+export type SelectDayReceiptResponses = {
+    /**
+     * OK
+     */
+    200: Month;
+};
+
+export type SelectDayReceiptResponse = SelectDayReceiptResponses[keyof SelectDayReceiptResponses];
 
 export type GetFolderStatusData = {
     body?: never;

@@ -50,6 +50,7 @@ type Input struct {
 	DayLimit    int
 	Values      *rates.Values // nil when the year has no values
 	Receipts    []Receipt
+	Selected    map[string]int64  // date → explicitly selected receipt; 0 means automatic
 	Combined    map[string]bool   // dates whose receipts are combined into one meal
 	Holidays    map[string]string // date → name, for the company's state
 	ChurchTaxBP int64             // church tax on the flat tax; 0 with proof of non-membership
@@ -57,18 +58,19 @@ type Input struct {
 
 // Day is one meal day (Essenstag).
 type Day struct {
-	Date       string      `json:"date"`
-	ReceiptIDs []int64     `json:"receiptIds" doc:"receipts making up the day's total"`
-	Ignored    []int64     `json:"ignored" doc:"further receipts of the day that do not count"`
-	Combined   bool        `json:"combined"`
-	Total      money.Cents `json:"total"`
-	Counted    bool        `json:"counted"`
-	Allowance  money.Cents `json:"allowance"`
-	TaxFree    money.Cents `json:"taxFree"`
-	Taxable    money.Cents `json:"taxable"`
-	Rules      []string    `json:"rules"`
-	Warnings   []string    `json:"warnings" doc:"weekend, holiday, several_receipts, over_limit"`
-	Holiday    string      `json:"holiday,omitempty"`
+	Date              string      `json:"date"`
+	SelectedReceiptID int64       `json:"selectedReceiptId" doc:"explicit choice; 0 means automatic or combined"`
+	ReceiptIDs        []int64     `json:"receiptIds" doc:"receipts making up the day's total"`
+	Ignored           []int64     `json:"ignored" doc:"further receipts of the day that do not count"`
+	Combined          bool        `json:"combined"`
+	Total             money.Cents `json:"total"`
+	Counted           bool        `json:"counted"`
+	Allowance         money.Cents `json:"allowance"`
+	TaxFree           money.Cents `json:"taxFree"`
+	Taxable           money.Cents `json:"taxable"`
+	Rules             []string    `json:"rules"`
+	Warnings          []string    `json:"warnings" doc:"weekend, holiday, several_receipts, over_limit"`
+	Holiday           string      `json:"holiday,omitempty"`
 }
 
 // Totals sum the counted days.
@@ -118,7 +120,7 @@ func Compute(in Input) Result {
 }
 
 // mealDays groups receipts by date (R1). Per day the highest receipt counts,
-// or all of them when the employee combined the day.
+// unless the employee selects another receipt or combines the day.
 func mealDays(in Input) []Day {
 	byDate := map[string][]Receipt{}
 	for _, r := range in.Receipts {
@@ -136,17 +138,26 @@ func mealDays(in Input) []Day {
 		if len(rs) > 1 {
 			d.Warnings = append(d.Warnings, "several_receipts")
 		}
-		if in.Combined[date] && len(rs) > 1 {
+		chosen := 0
+		for i, r := range rs {
+			if r.ID == in.Selected[date] {
+				chosen, d.SelectedReceiptID = i, r.ID
+				break
+			}
+		}
+		if d.SelectedReceiptID == 0 && in.Combined[date] && len(rs) > 1 {
 			d.Combined = true
 			for _, r := range rs {
 				d.ReceiptIDs = append(d.ReceiptIDs, r.ID)
 				d.Total += r.Total
 			}
 		} else {
-			d.ReceiptIDs = append(d.ReceiptIDs, rs[0].ID)
-			d.Total = rs[0].Total
-			for _, r := range rs[1:] {
-				d.Ignored = append(d.Ignored, r.ID)
+			d.ReceiptIDs = append(d.ReceiptIDs, rs[chosen].ID)
+			d.Total = rs[chosen].Total
+			for i, r := range rs {
+				if i != chosen {
+					d.Ignored = append(d.Ignored, r.ID)
+				}
 			}
 		}
 		days = append(days, d)
