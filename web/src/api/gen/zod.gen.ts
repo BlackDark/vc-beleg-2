@@ -112,6 +112,7 @@ export const zReasonBody = z.object({
 });
 
 export const zReceipt = z.object({
+    archived: z.boolean(),
     checkedAt: z.string(),
     createdAt: z.string(),
     date: z.string(),

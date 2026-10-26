@@ -16,6 +16,7 @@ The rules are simple until they aren't: one allowance per working day, at most â
 
 - **Correct amounts**: 2026 benefit values, tax models A (company pays 25 % flat tax on the taxable part), B (taxable part through payroll) and C (allowance capped at the â‚¬3.10 top-up; tax-free when your own share covers the benefit value, otherwise the rest goes through payroll), rule IDs on every day.
 - **Receipts in, no typing**: photo or PDF upload, mail them to a dedicated mailbox, or drop them into a WebDAV folder (Nextcloud, NAS); an LLM (Claude, Gemini or any OpenAI-compatible API such as OpenRouter or a local Ollama) reads date, total and merchant, you confirm.
+- **Receipt deletion**: delete mistaken or duplicate receipts with confirmation until they appear in an archived monthly report. Archived evidence stays protected, including after reopening a month.
 - **Monthly PDF**: summary, day table and every receipt, versioned when a month is reopened.
 - **Phone and desktop**: installable web app in German or English, from 360 px wide.
 

@@ -22,7 +22,7 @@ One employee (the managing shareholder), lunch from the supermarket on most work
 - Capture: camera, or picking an existing photo or PDF (iOS file picker). Check screen: receipt next to the extracted fields (stacked on phone), low-confidence fields highlighted, confirm jumps to the next receipt.
 - Originals stay unchanged as evidence; previews and report images are re-rendered without EXIF.
 - German and English UI (browser language, switchable in the settings; the report stays German), PWA, dark by default (light and system selectable, PDF light), usable from 360 px.
-- Delivery: one OCI image (amd64/arm64, GHCR `ghcr.io/blackdark/vc-beleg-2`), Kubernetes single replica, SQLite and receipts on one PVC. Receipts are never deleted (6-year retention for payroll records). `mahlzeit backup DIR` CLI and documented restore.
+- Delivery: one OCI image (amd64/arm64, GHCR `ghcr.io/blackdark/vc-beleg-2`), Kubernetes single replica, SQLite and receipts on one PVC. Receipts included in any archived monthly report cannot be deleted, including after reopening (6-year retention for payroll records). Other receipts can be deleted with confirmation, even after checking; receipt numbers are never reused. `mahlzeit backup DIR` CLI and documented restore.
 
 ## Deferred (recorded, not decided)
 

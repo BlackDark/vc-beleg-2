@@ -182,9 +182,6 @@ func TestReceiptRules(t *testing.T) {
 		t.Fatal("checked without date")
 	}
 	must(a.CheckReceipt(ctx, u, r1.ID, ReceiptInput{Date: "2026-10-05", Total: 500}))
-	if err := a.DeleteReceipt(ctx, u, r1.ID); err == nil {
-		t.Fatal("deleted a numbered receipt")
-	}
 	if err := a.DeleteReceipt(ctx, u, r2.ID); err != nil {
 		t.Fatal(err)
 	}

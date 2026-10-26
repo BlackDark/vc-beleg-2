@@ -112,7 +112,7 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
       navigate({ to: "/receipts" });
     },
   });
-  const busy = check.isPending || save.isPending;
+  const busy = check.isPending || save.isPending || remove.isPending || uncheck.isPending;
   const uncertain = (field: string) =>
     r.extraction === "done" && !dirty && (r.extracted.uncertain ?? []).includes(field);
   const highlight = (field: string) => cn(uncertain(field) && "border-warning ring-2 ring-warning/30");
@@ -242,19 +242,6 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
                     >
                       {m.save()}
                     </Button>
-                    {!r.number ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        aria-label={m.delete()}
-                        onClick={() => {
-                          if (window.confirm(m.delete_receipt_confirm()))
-                            remove.mutate({ path: { id: r.id } });
-                        }}
-                      >
-                        <Trash2Icon />
-                      </Button>
-                    ) : null}
                   </div>
                 </div>
               ) : (
@@ -276,6 +263,22 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
                   </p>
                 </div>
               )}
+              <div className="grid gap-2 border-t pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={r.archived || busy}
+                  onClick={() => {
+                    if (window.confirm(m.delete_receipt_confirm())) remove.mutate({ path: { id: r.id } });
+                  }}
+                >
+                  <Trash2Icon />
+                  {m.delete_receipt()}
+                </Button>
+                {r.archived ? (
+                  <p className="text-xs text-muted-foreground">{m.receipt_delete_archived()}</p>
+                ) : null}
+              </div>
             </form>
           </CardContent>
         </Card>
