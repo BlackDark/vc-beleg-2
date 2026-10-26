@@ -242,5 +242,13 @@
   "reader_on": "Aktiviert",
   "reader_disabled": "Deaktiviert",
   "reader_execution": "Belege werden nacheinander gelesen, mit maximal {seconds} Sekunden pro Beleg. Vorübergehende Fehler werden innerhalb dieses Zeitlimits erneut versucht.",
-  "reader_durations": "Tatsächliche Laufzeiten im Import-Protokoll ansehen"
+  "reader_durations": "Tatsächliche Laufzeiten im Import-Protokoll ansehen",
+  "connection_checking": "Verbindung wird geprüft …",
+  "connection_success": "Verbindung erfolgreich",
+  "connection_failed": "Verbindung fehlgeschlagen. Bitte Endpunkt, Zugangsdaten und Netzwerkzugriff prüfen.",
+  "connection_timeout": "Das Zeitlimit für den Verbindungstest wurde erreicht.",
+  "connection_duration": "Dauer: {duration} ms",
+  "connection_test_service": "{service}: Verbindung testen",
+  "reader_test_connection": "KI-Verbindung testen",
+  "reader_ping_hint": "Sendet nur eine kurze Ping/Pong-Nachricht, keine Belege. Es können API-Kosten entstehen. Der Test prüft Textzugriff, nicht Bild- oder PDF-Unterstützung."
 }

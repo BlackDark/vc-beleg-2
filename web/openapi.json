@@ -18,6 +18,28 @@
         ],
         "type": "object"
       },
+      "ConnectionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "durationMs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "errorCode": {
+            "description": "empty on success; failed or timeout otherwise",
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "durationMs",
+          "errorCode"
+        ],
+        "type": "object"
+      },
       "Day": {
         "additionalProperties": false,
         "properties": {
@@ -2402,6 +2424,57 @@
         ],
         "tags": [
           "months"
+        ]
+      }
+    },
+    "/api/services/{service}/check": {
+      "post": {
+        "operationId": "checkConnection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "enum": [
+                "reader",
+                "mail",
+                "folder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Test configured service access without importing receipts",
+        "tags": [
+          "profile"
         ]
       }
     },

@@ -70,6 +70,8 @@ type App struct {
 	Typst     *export.Typst
 	Rates     rates.Table
 	Extractor Extractor // nil: extraction is off
+	// ConnectionChecks is configured once before serving requests.
+	ConnectionChecks map[string]func(context.Context) error
 
 	extractWake chan struct{}
 	extractMu   sync.Mutex
@@ -89,8 +91,9 @@ func New(db *sql.DB, cfg Config, log *slog.Logger, ex Extractor) (*App, error) {
 		return nil, err
 	}
 	return &App{DB: db, Cfg: cfg, Log: log, Files: files, Rates: tab, Extractor: ex, now: time.Now,
-		Typst:       &export.Typst{Bin: cfg.Typst, FontDir: cfg.FontDir},
-		extractWake: make(chan struct{}, 1)}, nil
+		ConnectionChecks: map[string]func(context.Context) error{},
+		Typst:            &export.Typst{Bin: cfg.Typst, FontDir: cfg.FontDir},
+		extractWake:      make(chan struct{}, 1)}, nil
 }
 
 func (a *App) stamp() string { return a.now().UTC().Format(time.RFC3339) }

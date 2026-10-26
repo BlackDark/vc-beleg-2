@@ -17,6 +17,10 @@ type passwordBody struct {
 
 func (s *Server) registerProfile(api huma.API) {
 	tags := []string{"profile"}
+	authed(s, api, huma.Operation{OperationID: "checkConnection", Method: http.MethodPost, Path: "/api/services/{service}/check", Tags: tags, Summary: "Test configured service access without importing receipts"},
+		func(ctx context.Context, u *app.User, in *connectionInput) (*body[*app.ConnectionResult], error) {
+			return wrap(s.app.CheckConnection(ctx, in.Service))
+		})
 	authed(s, api, huma.Operation{OperationID: "getReaderStatus", Method: http.MethodGet, Path: "/api/reader-status", Tags: tags, Summary: "Receipt reader configuration without credentials"},
 		func(ctx context.Context, u *app.User, _ *empty) (*body[app.ReaderInfo], error) {
 			return wrap(s.app.Cfg.ReaderInfo, nil)
@@ -61,4 +65,8 @@ func (s *Server) registerProfile(api huma.API) {
 
 type importLogQuery struct {
 	Limit int `query:"limit" minimum:"1" maximum:"200" default:"50"`
+}
+
+type connectionInput struct {
+	Service string `path:"service" enum:"reader,mail,folder"`
 }

@@ -77,6 +77,8 @@ Bitrix24: `MAHLZEIT_WEBDAV_URL=https://<portal>.bitrix24.de/company/personal/use
 
 ## Checking the setup
 
+Settings → Integrations offers explicit connection tests with elapsed time and a 30-second timeout. AI sends only a text ping/pong to the configured model and effort, never a receipt; provider charges may apply, and success does not establish image/PDF support. Mail verifies TLS and login and opens the mailbox read-only (EXAMINE). WebDAV lists the folder (PROPFIND) without downloading or moving files. Disabled services cannot be tested. Failed checks return a safe generic result, without remote response content or credentials.
+
 Two commands test the live configuration without changing anything:
 
 ```sh

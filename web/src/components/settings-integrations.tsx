@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getFolderStatusOptions, getMailStatusOptions } from "@/api/gen/@tanstack/react-query.gen";
+import { ConnectionCheck } from "@/components/connection-check";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, Skeleton } from "@/components/ui/misc";
 import { formatDateTime } from "@/lib/format";
@@ -8,6 +9,7 @@ export function MailCard() {
   const q = useQuery({ ...getMailStatusOptions(), refetchInterval: 30_000 });
   return (
     <ImportCard
+      service="mail"
       title={m.settings_mail()}
       off={m.mail_off()}
       status={q.data && { ...q.data, location: q.data.mailbox }}
@@ -19,6 +21,7 @@ export function FolderCard() {
   const q = useQuery({ ...getFolderStatusOptions(), refetchInterval: 30_000 });
   return (
     <ImportCard
+      service="folder"
       title={m.settings_folder()}
       off={m.folder_off()}
       status={q.data && { ...q.data, location: q.data.folder }}
@@ -35,7 +38,17 @@ type ImportStatus = {
 };
 
 /** State of a background import (mail or folder). */
-function ImportCard({ title, off, status: s }: { title: string; off: string; status?: ImportStatus }) {
+function ImportCard({
+  title,
+  off,
+  service,
+  status: s,
+}: {
+  title: string;
+  off: string;
+  service: "mail" | "folder";
+  status?: ImportStatus;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -57,6 +70,11 @@ function ImportCard({ title, off, status: s }: { title: string; off: string; sta
             {s.lastError ? <Alert variant="error">{s.lastError}</Alert> : null}
           </>
         )}
+        <ConnectionCheck
+          service={service}
+          enabled={s?.enabled ?? false}
+          label={m.connection_test_service({ service: title })}
+        />
       </CardContent>
     </Card>
   );

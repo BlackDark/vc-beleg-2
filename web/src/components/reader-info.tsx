@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getReaderStatusOptions } from "@/api/gen/@tanstack/react-query.gen";
+import { ConnectionCheck } from "@/components/connection-check";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, Skeleton } from "@/components/ui/misc";
 import { m } from "@/paraglide/messages";
@@ -48,6 +49,8 @@ export function ReaderInfoCard() {
             <p className="text-muted-foreground">
               {m.reader_execution({ seconds: String(info.timeoutSeconds) })}
             </p>
+            <p className="text-muted-foreground">{m.reader_ping_hint()}</p>
+            <ConnectionCheck service="reader" enabled={info.enabled} label={m.reader_test_connection()} />
             <Link to="/settings" search={{ section: "imports" }} className="text-primary underline">
               {m.reader_durations()}
             </Link>

@@ -7,6 +7,12 @@ export const zCombineBody = z.object({
     date: z.iso.date()
 });
 
+export const zConnectionResult = z.object({
+    durationMs: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    errorCode: z.string(),
+    ok: z.boolean()
+});
+
 export const zDay = z.object({
     allowance: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     combined: z.boolean(),
@@ -523,6 +529,19 @@ export const zGetReportPdfPath = z.object({
  * OK
  */
 export const zGetReportPdfResponse = z.string();
+
+export const zCheckConnectionPath = z.object({
+    service: z.enum([
+        'reader',
+        'mail',
+        'folder'
+    ])
+});
+
+/**
+ * OK
+ */
+export const zCheckConnectionResponse = zConnectionResult;
 
 /**
  * OK

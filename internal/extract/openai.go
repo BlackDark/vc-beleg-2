@@ -52,7 +52,6 @@ func (o *OpenAI) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 		file = map[string]any{"type": "file", "file": map[string]any{"filename": "receipt.pdf", "file_data": dataURL}}
 	}
 	body := map[string]any{
-		"model": o.model,
 		"messages": []any{map[string]any{"role": "user", "content": []any{
 			file,
 			map[string]any{"type": "text", "text": prompt},
@@ -62,6 +61,22 @@ func (o *OpenAI) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 			"json_schema": map[string]any{"name": "receipt", "strict": true, "schema": schema},
 		},
 	}
+	resp, err := o.request(ctx, body)
+	if err != nil {
+		return app.Extraction{}, err
+	}
+	if len(resp.Choices) == 0 {
+		return app.Extraction{}, errDeclined
+	}
+	c := resp.Choices[0]
+	if c.Message.Refusal != "" || c.FinishReason == "content_filter" {
+		return app.Extraction{}, errDeclined
+	}
+	return parseAnswer(c.Message.Content)
+}
+
+func (o *OpenAI) request(ctx context.Context, body map[string]any) (openAIResponse, error) {
+	body["model"] = o.model
 	if o.Effort != "none" {
 		effort := o.Effort
 		if effort == "" {
@@ -75,14 +90,7 @@ func (o *OpenAI) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 	}
 	var resp openAIResponse
 	if err := postJSON(ctx, o.client, o.baseURL+"/chat/completions", header, body, &resp); err != nil {
-		return app.Extraction{}, err
+		return resp, err
 	}
-	if len(resp.Choices) == 0 {
-		return app.Extraction{}, errDeclined
-	}
-	c := resp.Choices[0]
-	if c.Message.Refusal != "" || c.FinishReason == "content_filter" {
-		return app.Extraction{}, errDeclined
-	}
-	return parseAnswer(c.Message.Content)
+	return resp, nil
 }

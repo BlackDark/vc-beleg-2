@@ -43,29 +43,36 @@ func (c *Claude) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 	} else {
 		file = anthropic.NewBetaImageBlock(anthropic.BetaBase64ImageSourceParam{Data: b64, MediaType: anthropic.BetaBase64ImageSourceMediaType(mime)})
 	}
-	params := anthropic.BetaMessageNewParams{
-		Model:     c.model,
-		MaxTokens: 4000,
-		OutputConfig: anthropic.BetaOutputConfigParam{
-			Effort: anthropic.BetaOutputConfigEffortLow,
-			Format: anthropic.BetaJSONOutputFormatParam{Schema: schema},
-		},
-		Messages: []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(file, anthropic.NewBetaTextBlock(prompt))},
+	params := c.params()
+	params.OutputConfig.Format = anthropic.BetaJSONOutputFormatParam{Schema: schema}
+	params.Messages = []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(file, anthropic.NewBetaTextBlock(prompt))}
+	text, err := c.request(ctx, params)
+	if err != nil {
+		return app.Extraction{}, err
 	}
+	return parseAnswer(text)
+}
+
+func (c *Claude) params() anthropic.BetaMessageNewParams {
+	params := anthropic.BetaMessageNewParams{Model: c.model, MaxTokens: 4000, OutputConfig: anthropic.BetaOutputConfigParam{Effort: anthropic.BetaOutputConfigEffortLow}}
 	if c.fallback {
 		params.Betas = []anthropic.AnthropicBeta{anthropic.AnthropicBetaServerSideFallback2026_07_01}
 		params.Fallbacks = anthropic.BetaFallbacksParamOfDefault()
 	}
+	return params
+}
+
+func (c *Claude) request(ctx context.Context, params anthropic.BetaMessageNewParams) (string, error) {
 	resp, err := c.client.Beta.Messages.New(ctx, params)
 	if err != nil {
 		var apiErr *anthropic.Error
 		if errors.As(err, &apiErr) {
-			return app.Extraction{}, fmt.Errorf("claude api: status %d", apiErr.StatusCode)
+			return "", fmt.Errorf("claude api: status %d", apiErr.StatusCode)
 		}
-		return app.Extraction{}, err
+		return "", err
 	}
 	if resp.StopReason == anthropic.BetaStopReasonRefusal {
-		return app.Extraction{}, errors.New("claude declined the request")
+		return "", errors.New("claude declined the request")
 	}
 	var text strings.Builder
 	for _, block := range resp.Content {
@@ -73,5 +80,5 @@ func (c *Claude) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 			text.WriteString(t.Text)
 		}
 	}
-	return parseAnswer(text.String())
+	return text.String(), nil
 }

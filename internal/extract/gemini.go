@@ -71,23 +71,39 @@ func (g *Gemini) Extract(ctx context.Context, mime string, data []byte) (app.Ext
 		}}},
 		"generationConfig": map[string]any{"responseMimeType": "application/json", "responseSchema": geminiSchema},
 	}
-	header := http.Header{"X-Goog-Api-Key": {g.apiKey}}
-	var resp geminiResponse
-	endpoint := g.baseURL + "/v1beta/models/" + url.PathEscape(g.model) + ":generateContent"
-	if err := postJSON(ctx, g.client, endpoint, header, body, &resp); err != nil {
+	resp, err := g.request(ctx, body)
+	if err != nil {
 		return app.Extraction{}, err
 	}
+	text, err := geminiText(resp)
+	if err != nil {
+		return app.Extraction{}, err
+	}
+	return parseAnswer(text)
+}
+
+func geminiText(resp geminiResponse) (string, error) {
 	if resp.PromptFeedback.BlockReason != "" || len(resp.Candidates) == 0 {
-		return app.Extraction{}, errDeclined
+		return "", errDeclined
 	}
 	c := resp.Candidates[0]
 	switch c.FinishReason {
 	case "SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION":
-		return app.Extraction{}, errDeclined
+		return "", errDeclined
 	}
 	var text strings.Builder
 	for _, p := range c.Content.Parts {
 		text.WriteString(p.Text)
 	}
-	return parseAnswer(text.String())
+	return text.String(), nil
+}
+
+func (g *Gemini) request(ctx context.Context, body map[string]any) (geminiResponse, error) {
+	header := http.Header{"X-Goog-Api-Key": {g.apiKey}}
+	var resp geminiResponse
+	endpoint := g.baseURL + "/v1beta/models/" + url.PathEscape(g.model) + ":generateContent"
+	if err := postJSON(ctx, g.client, endpoint, header, body, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
 }

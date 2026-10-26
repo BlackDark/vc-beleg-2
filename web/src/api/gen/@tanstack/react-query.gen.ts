@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { changePassword, checkReceipt, closeMonth, combineDay, deleteReceipt, getFolderStatus, getImportLog, getMailStatus, getMe, getMonth, getReaderStatus, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, selectDayReceipt, setMonthPaid, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
-import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetFolderStatusData, GetFolderStatusError, GetFolderStatusResponse, GetImportLogData, GetImportLogError, GetImportLogResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReaderStatusData, GetReaderStatusError, GetReaderStatusResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SelectDayReceiptData, SelectDayReceiptError, SelectDayReceiptResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
+import { changePassword, checkConnection, checkReceipt, closeMonth, combineDay, deleteReceipt, getFolderStatus, getImportLog, getMailStatus, getMe, getMonth, getReaderStatus, getReceipt, getReceiptFile, getReceiptPreview, getReportPdf, getSession, getSettings, listMonths, listRates, listReceipts, login, logout, type Options, reopenMonth, retryExtraction, saveSettings, selectDayReceipt, setMonthPaid, setup, uncheckReceipt, updateMe, updateReceipt, uploadReceipt } from '../sdk.gen';
+import type { ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckConnectionData, CheckConnectionError, CheckConnectionResponse, CheckReceiptData, CheckReceiptError, CheckReceiptResponse, CloseMonthData, CloseMonthError, CloseMonthResponse, CombineDayData, CombineDayError, CombineDayResponse, DeleteReceiptData, DeleteReceiptError, DeleteReceiptResponse, GetFolderStatusData, GetFolderStatusError, GetFolderStatusResponse, GetImportLogData, GetImportLogError, GetImportLogResponse, GetMailStatusData, GetMailStatusError, GetMailStatusResponse, GetMeData, GetMeError, GetMeResponse, GetMonthData, GetMonthError, GetMonthResponse, GetReaderStatusData, GetReaderStatusError, GetReaderStatusResponse, GetReceiptData, GetReceiptError, GetReceiptFileData, GetReceiptFileError, GetReceiptFileResponse, GetReceiptPreviewData, GetReceiptPreviewError, GetReceiptPreviewResponse, GetReceiptResponse, GetReportPdfData, GetReportPdfError, GetReportPdfResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, ListMonthsData, ListMonthsError, ListMonthsResponse, ListRatesData, ListRatesError, ListRatesResponse, ListReceiptsData, ListReceiptsError, ListReceiptsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, ReopenMonthData, ReopenMonthError, ReopenMonthResponse, RetryExtractionData, RetryExtractionError, RetryExtractionResponse, SaveSettingsData, SaveSettingsError, SaveSettingsResponse, SelectDayReceiptData, SelectDayReceiptError, SelectDayReceiptResponse, SetMonthPaidData, SetMonthPaidError, SetMonthPaidResponse, SetupData, SetupError, SetupResponse, UncheckReceiptData, UncheckReceiptError, UncheckReceiptResponse, UpdateMeData, UpdateMeError, UpdateMeResponse, UpdateReceiptData, UpdateReceiptError, UpdateReceiptResponse, UploadReceiptData, UploadReceiptError, UploadReceiptResponse } from '../types.gen';
 
 /**
  * Combine the receipts of a date into one meal, or undo it
@@ -494,6 +494,23 @@ export const getReportPdfOptions = (options: Options<GetReportPdfData>) => query
     },
     queryKey: getReportPdfQueryKey(options)
 });
+
+/**
+ * Test configured service access without importing receipts
+ */
+export const checkConnectionMutation = (options?: Partial<Options<CheckConnectionData>>): UseMutationOptions<CheckConnectionResponse, CheckConnectionError, Options<CheckConnectionData>> => {
+    const mutationOptions: UseMutationOptions<CheckConnectionResponse, CheckConnectionError, Options<CheckConnectionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await checkConnection({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const getSessionQueryKey = (options?: Options<GetSessionData>) => createQueryKey('getSession', options);
 

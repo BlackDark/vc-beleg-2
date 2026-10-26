@@ -9,6 +9,15 @@ export type CombineBody = {
     date: string;
 };
 
+export type ConnectionResult = {
+    durationMs: number;
+    /**
+     * empty on success; failed or timeout otherwise
+     */
+    errorCode: string;
+    ok: boolean;
+};
+
 export type Day = {
     allowance: number;
     combined: boolean;
@@ -1095,6 +1104,33 @@ export type GetReportPdfResponses = {
 };
 
 export type GetReportPdfResponse = GetReportPdfResponses[keyof GetReportPdfResponses];
+
+export type CheckConnectionData = {
+    body?: never;
+    path: {
+        service: 'reader' | 'mail' | 'folder';
+    };
+    query?: never;
+    url: '/api/services/{service}/check';
+};
+
+export type CheckConnectionErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type CheckConnectionError = CheckConnectionErrors[keyof CheckConnectionErrors];
+
+export type CheckConnectionResponses = {
+    /**
+     * OK
+     */
+    200: ConnectionResult;
+};
+
+export type CheckConnectionResponse = CheckConnectionResponses[keyof CheckConnectionResponses];
 
 export type GetSessionData = {
     body?: never;

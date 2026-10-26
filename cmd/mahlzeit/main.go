@@ -99,6 +99,9 @@ func serve() error {
 	if err != nil {
 		return err
 	}
+	if err := configureConnections(cfg, a, reader); err != nil {
+		return err
+	}
 	go a.RunExtraction(ctx)
 	if cfg.Mail != nil {
 		go mailimport.Run(ctx, *cfg.Mail, a, log)

@@ -242,5 +242,13 @@
   "reader_on": "Enabled",
   "reader_disabled": "Disabled",
   "reader_execution": "Receipts are read one at a time, with at most {seconds} seconds per receipt. Temporary failures are retried within this time limit.",
-  "reader_durations": "View actual reading durations in the import log"
+  "reader_durations": "View actual reading durations in the import log",
+  "connection_checking": "Checking connection…",
+  "connection_success": "Connection successful",
+  "connection_failed": "Connection failed. Check the endpoint, credentials and network access.",
+  "connection_timeout": "The connection check timed out.",
+  "connection_duration": "Duration: {duration} ms",
+  "connection_test_service": "{service}: test connection",
+  "reader_test_connection": "Test AI connection",
+  "reader_ping_hint": "Sends only a short ping/pong message, with no receipts. API charges may apply. This tests text access, not image or PDF support."
 }
