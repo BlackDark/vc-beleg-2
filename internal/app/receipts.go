@@ -445,3 +445,5 @@ func (a *App) MailImported(ctx context.Context, u *User, messageID string) (bool
 	err := a.DB.QueryRowContext(ctx, `SELECT count(*) FROM receipts WHERE employee_id = ? AND mail_message_id = ?`, u.EmployeeID, messageID).Scan(&n)
 	return n > 0, err
 }
+
+// gate probe: delete this comment
