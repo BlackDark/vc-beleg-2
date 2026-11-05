@@ -1,80 +1,21 @@
-// From the BlackDark/agent-presets template, adapted to this repo (Go, pnpm workspace in web/,
-// Docker, GitHub Actions, mise; no Rust).
+// Repo config from BlackDark/renovate-base. Keep only what this repo adds on top; the shared
+// rules (weekly schedule, grouped non-major automerge, security fixes any time, npm release age,
+// 0.x minors by hand, lock file maintenance) live in the base preset.
 // Repo settings: enable "Allow auto-merge" and require the CI status checks on main,
 // otherwise platform automerge lands PRs before CI ran.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    "config:best-practices", // recommended + digest pins for Docker images and GitHub Actions
-    "security:minimumReleaseAgeNpm", // npm releases wait 3 days (unpublish window, hijacked releases)
-    "customManagers:githubActionsVersions", // `# renovate: datasource=… depName=…` comments in workflows
+    "github>blackdark/renovate-base//default.json5",
+    "github>blackdark/renovate-base//go.json5",
     ":pinVersions", // exact versions in package.json; this is an app, not a library
-    ":prConcurrentLimitNone",
-    ":prHourlyLimitNone",
   ],
-  labels: ["dependencies"],
-  semanticCommits: "enabled",
-  timezone: "Europe/Berlin",
 
-  // Weekly: branches are created/updated Monday early morning only.
-  schedule: ["before 4am on monday"],
-
-  // With a schedule, Renovate's own automerge only runs inside the window too, so a PR that turns
-  // green later would wait a week. Platform automerge (GitHub native) merges it as soon as CI passes.
-  updateNotScheduled: false,
-  platformAutomerge: true,
-
-  separateMajorMinor: true,
-  separateMultipleMajor: true,
-
-  // Go: keep go.sum tidy; rewrite import paths on /vN majors.
+  // Go: rewrite import paths on /vN majors (gomodTidy already comes from go.json5).
   postUpdateOptions: ["gomodTidy", "gomodUpdateImportPaths"],
 
-  lockFileMaintenance: {
-    enabled: true,
-    automerge: true,
-  },
-
-  // Later rules override earlier ones: general first, specific after.
+  // Later rules override earlier ones, and these override the base preset: general first, specific after.
   packageRules: [
-    {
-      description: "Group and automerge patch, pin and digest updates",
-      matchUpdateTypes: ["patch", "pin", "pinDigest", "digest"],
-      groupName: "all patch/pin/digest updates",
-      groupSlug: "all-patch-pin-digest",
-      automerge: true,
-    },
-    {
-      description: "Group and automerge minor updates",
-      matchUpdateTypes: ["minor"],
-      groupName: "all minor updates",
-      groupSlug: "all-minor",
-      automerge: true,
-    },
-    {
-      description: "0.x: minor may break, review by hand",
-      matchUpdateTypes: ["minor"],
-      matchCurrentVersion: "/^v?0\\./",
-      groupName: null,
-      automerge: false,
-    },
-    {
-      // mise, go.mod and golang images are separate managers; ungrouped, one bump lands alone
-      // and the versions drift apart.
-      description: "Go toolchain (mise + go.mod + golang images) in one PR",
-      matchManagers: ["mise", "gomod", "dockerfile"],
-      matchPackageNames: ["go", "golang", "docker.io/library/golang"],
-      groupName: "go toolchain",
-      groupSlug: "go-toolchain",
-      automerge: true,
-    },
-    {
-      // Without bump the go directive in go.mod stays behind the grouped toolchain.
-      description: "Move the go.mod go directive with the toolchain",
-      matchManagers: ["gomod"],
-      matchDepTypes: ["golang"],
-      rangeStrategy: "bump",
-    },
     {
       description: "Node runtime (mise + node images) in one PR",
       matchManagers: ["mise", "dockerfile"],
@@ -98,12 +39,6 @@
       matchPackageNames: ["typst", "typst/typst"],
       groupName: "typst",
       groupSlug: "typst",
-      automerge: false,
-    },
-    {
-      description: "Majors: one PR each, merged by hand",
-      matchUpdateTypes: ["major"],
-      addLabels: ["major"],
       automerge: false,
     },
     {
