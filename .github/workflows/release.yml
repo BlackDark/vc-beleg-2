@@ -12,9 +12,12 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   checks:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository] actionlint rejects '$/'
 
   image:
     needs: checks
@@ -25,6 +28,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Resolve version
         id: version
         env:
@@ -32,16 +37,20 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then v="${INPUT_VERSION#v}"; else v="${GITHUB_REF_NAME#v}"; fi
           echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "invalid version: $v" >&2; exit 1; }
-          echo "version=$v" >> "$GITHUB_OUTPUT"
-          echo "minor=$(echo "$v" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$v"
+            echo "minor=$(echo "$v" | cut -d. -f1,2)"
+            echo "image=ghcr.io/${GITHUB_REPOSITORY,,}"
+          } >> "$GITHUB_OUTPUT"
       - name: Create tag
         if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.version.outputs.version }}" -m "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          git tag -a "v${VERSION}" -m "v${VERSION}"
+          git push origin "v${VERSION}"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
@@ -67,6 +76,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: GitHub release
-        run: gh release create "v${{ steps.version.outputs.version }}" --generate-notes --title "v${{ steps.version.outputs.version }}"
+        run: gh release create "v${VERSION}" --generate-notes --title "v${VERSION}"
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
