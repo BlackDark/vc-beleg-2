@@ -138,7 +138,7 @@ func TestDurableQueueProcessesMoreThan256Receipts(t *testing.T) {
 	}
 	runReader(t, a)
 	waitExtraction(t, a, u, first.ID+300, "done")
-	list := must(a.ListReceipts(ctx, u, "", "", false))
+	list := must(a.ListReceipts(ctx, u, ReceiptFilter{}))
 	if len(list) != 301 || reader.calls.Load() != 301 {
 		t.Fatalf("receipts=%d readings=%d", len(list), reader.calls.Load())
 	}

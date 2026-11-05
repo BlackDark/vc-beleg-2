@@ -189,7 +189,7 @@ func TestReceiptRules(t *testing.T) {
 	if _, err := a.Import(ctx, u, "upload", "x.txt", []byte("hello"), "", nil); err == nil {
 		t.Fatal("accepted a text file")
 	}
-	got := must(a.ListReceipts(ctx, u, "2026-10", "checked", false))
+	got := must(a.ListReceipts(ctx, u, ReceiptFilter{Month: "2026-10", Status: "checked"}))
 	if len(got) != 1 || got[0].Number != "B-2026-0001" {
 		t.Fatalf("list = %+v", got)
 	}
@@ -260,7 +260,7 @@ func TestUndatedReceiptListingLeavesMonthUnchanged(t *testing.T) {
 		{"undated checked", "", "checked", true, []int64{}},
 		{"all", "", "", false, []int64{undated.ID, dated.ID}},
 	} {
-		if got := ids(must(a.ListReceipts(ctx, u, c.month, c.status, c.undated))); !slices.Equal(got, c.want) {
+		if got := ids(must(a.ListReceipts(ctx, u, ReceiptFilter{Month: c.month, Status: c.status, Undated: c.undated}))); !slices.Equal(got, c.want) {
 			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
 		}
 	}

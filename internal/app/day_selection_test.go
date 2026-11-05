@@ -36,7 +36,7 @@ func TestManualReceiptSelectionAndModes(t *testing.T) {
 	if d := m.Result.Days[0]; d.Combined || d.SelectedReceiptID != 0 || d.Total != 900 {
 		t.Fatalf("automatic: %+v", d)
 	}
-	if got := must(a.ListReceipts(ctx, u, "2026-10", "checked", false)); len(got) != 2 {
+	if got := must(a.ListReceipts(ctx, u, ReceiptFilter{Month: "2026-10", Status: "checked"})); len(got) != 2 {
 		t.Fatal("selection discarded other receipts")
 	}
 }

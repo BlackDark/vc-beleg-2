@@ -836,6 +836,15 @@ export type ListReceiptsData = {
          */
         undated?: boolean;
         status?: 'pending' | 'checked' | '';
+        /**
+         * reading status; active = queued or processing
+         */
+        reading?: 'done' | 'failed' | 'off' | 'active' | '';
+        source?: 'upload' | 'mail' | 'folder' | 'data' | '';
+        /**
+         * only receipts with at least one warning
+         */
+        warnings?: boolean;
     };
     url: '/api/receipts';
 };

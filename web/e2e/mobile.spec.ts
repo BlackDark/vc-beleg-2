@@ -40,3 +40,22 @@ test("every screen fits 360 px without horizontal scrolling", async ({ page }) =
   }
   await expect(page.getByRole("navigation", { name: "Hauptnavigation" }).last()).toBeVisible();
 });
+
+test("the receipt filters fit 360 px with every filter active", async ({ page }) => {
+  await page.goto("/login");
+  await page.fill("#username", "max");
+  await page.fill("#password", "a-long-password");
+  await page.getByRole("button", { name: "Anmelden" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  for (const path of [
+    "/receipts?status=pending&reading=active&source=folder&warnings=true",
+    "/receipts?status=undated&reading=active&source=folder&warnings=true",
+    "/receipts?status=undated&source=upload&warnings=true",
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("combobox", { name: "Quelle" })).toHaveValue(/folder|upload/);
+    await page.waitForLoadState("networkidle");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow, path).toBeLessThanOrEqual(0);
+  }
+});
