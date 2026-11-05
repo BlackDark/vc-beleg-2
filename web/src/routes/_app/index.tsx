@@ -90,7 +90,13 @@ function Start() {
                 text={m.start_nothing_to_check_text()}
               />
             ) : (
-              <ul className="-mx-2 grid">
+              <ul
+                // Focusable so keyboard users can scroll; the card title stays outside and visible.
+                // biome-ignore lint/a11y/noNoninteractiveTabindex: scrollable region must be keyboard reachable
+                tabIndex={0}
+                aria-label={m.start_to_check({ count: String(pending.length) })}
+                className="-mx-2 grid max-h-[min(28rem,60dvh)] overflow-y-auto rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
                 {pending.map((r) => (
                   <li key={r.id}>
                     <Link
