@@ -40,3 +40,54 @@ function crc32(buf: Buffer): number {
   }
   return ~c >>> 0;
 }
+
+/** Serves n pending receipts from the list endpoint; the rest of the API stays real. */
+export async function mockPendingReceipts(page: import("@playwright/test").Page, n: number) {
+  const receipts = Array.from({ length: n }, (_, i) => ({
+    id: 5000 + i,
+    status: "pending",
+    source: "upload",
+    number: "",
+    archived: false,
+    filename: `bulk-${i}.png`,
+    mime: "image/png",
+    pages: 1,
+    date: "",
+    total: 0,
+    merchant: `Bäckerei Nr. ${i + 1}`,
+    note: "",
+    mailFrom: "",
+    extraction: "done",
+    extracted: {},
+    createdAt: new Date().toISOString(),
+    checkedAt: "",
+    warnings: [],
+  }));
+  await page.route("**/api/receipts**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/receipts" && route.request().method() === "GET")
+      return route.fulfill({ json: receipts });
+    if (/^\/api\/receipts\/\d+\/preview$/.test(url.pathname))
+      return route.fulfill({ contentType: "image/png", body: receiptPng(1) });
+    return route.fallback();
+  });
+}
+
+/** Document height, list scroll state and whether the list can be reached by keyboard. */
+export async function listMetrics(
+  page: import("@playwright/test").Page,
+  list: import("@playwright/test").Locator,
+) {
+  await list.waitFor();
+  const box = await list.evaluate((el) => ({
+    scrollable: el.scrollHeight > el.clientHeight,
+    focusable: (el as HTMLElement).tabIndex >= 0,
+    overflowY: getComputedStyle(el).overflowY,
+  }));
+  const doc = await page.evaluate(() => ({
+    height: document.documentElement.scrollHeight,
+    viewport: window.innerHeight,
+    overflowX: document.documentElement.scrollWidth - window.innerWidth,
+  }));
+  return { ...box, ...doc };
+}

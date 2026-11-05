@@ -77,7 +77,13 @@ function Receipts() {
       ) : receipts.length === 0 ? (
         <EmptyState icon={ReceiptIcon} title={m.receipts_empty()} text={m.receipts_empty_text()} />
       ) : (
-        <Card className="divide-y overflow-hidden p-0">
+        <Card
+          // Bounded so header, month switcher and filter stay in view; focusable for keyboard scrolling.
+          tabIndex={0}
+          role="region"
+          aria-label={m.nav_receipts()}
+          className="max-h-[max(16rem,calc(100dvh-20rem))] divide-y overflow-y-auto p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
           {receipts.map((r) => (
             <Link
               key={r.id}

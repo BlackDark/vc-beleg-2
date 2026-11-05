@@ -32,7 +32,7 @@ export default defineConfig({
         locale: "de-DE",
         launchOptions: { executablePath },
       },
-      testMatch: /mobile\.spec\.ts/,
+      testMatch: /(mobile|long-lists)\.spec\.ts/,
       dependencies: ["desktop"],
     },
   ],
