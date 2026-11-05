@@ -33,6 +33,7 @@ jobs:
     if: needs.release-please.outputs.created == 'true'
     uses: ./.github/workflows/release.yml # zizmor: ignore[self-repository] actionlint rejects '$/'
     permissions:
+      contents: read # release.yml calls ci.yml, which needs it
       packages: write
     with:
       tag: ${{ needs.release-please.outputs.tag }}
