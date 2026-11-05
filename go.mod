@@ -11,7 +11,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/zitadel/oidc/v3 v3.51.16
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	modernc.org/sqlite v1.60.1
 )
 
