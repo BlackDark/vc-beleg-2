@@ -20,12 +20,19 @@ concurrency:
 # `changes` detects which areas a PR touches via git diff (HEAD^1..HEAD on the merge commit);
 # push/workflow_call/workflow_dispatch run everything. Draft PRs skip `changes`, so every area
 # job (needs: changes) is skipped too, and `check` (if: always()) still passes.
+env:
+  # renovate: datasource=github-releases depName=rhysd/actionlint
+  ACTIONLINT_VERSION: "1.7.12"
+  # renovate: datasource=npm depName=renovate
+  RENOVATE_VERSION: "44.198.0"
+
 jobs:
   changes:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
+      lint: ${{ steps.areas.outputs.lint }}
       app: ${{ steps.areas.outputs.app }}
       docker: ${{ steps.areas.outputs.docker }}
     steps:
@@ -37,6 +44,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
             {
+              echo "lint=true"
               echo "app=true"
               echo "docker=true"
             } >> "$GITHUB_OUTPUT"
@@ -47,7 +55,9 @@ jobs:
           # app: Go and SPA are checked and exercised together (generated client, e2e)
           app=$(has '^(cmd/|internal/|web/|go\.(mod|sum)$|mise\.toml$)')
           docker=$(has '^(docker/|cmd/|internal/|web/|go\.(mod|sum)$)')
+          lint=$(has '^(\.github/|renovate\.json5?$)')
           {
+            echo "lint=$lint"
             echo "app=$app"
             echo "docker=$docker"
           } >> "$GITHUB_OUTPUT"
@@ -137,9 +147,54 @@ jobs:
   # Required check `ci` in the ruleset. Its name must stay unique across workflows: a second job
   # called `check` (lint.yml had one) satisfied the ruleset before the area jobs finished.
   # Green when every area job passed or was skipped; if: always() so a failure cannot hide.
-  ci:
+  actionlint:
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash") "$ACTIONLINT_VERSION"
+          ./actionlint -color .github/workflows/*.yml
+
+  renovate-config:
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: renovate-config-validator
+        run: npx --yes --package "renovate@${RENOVATE_VERSION}" -- renovate-config-validator --strict
+
+  zizmor:
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@53290badfa369cb0bf7ad16342cb62c2fa47ac7b # v0.8.0
+        with:
+          inputs: .github/workflows
+          advanced-security: false
+          annotations: true
+
+  # The one required check in the ruleset. Do not add a second workflow with its own gate:
+  # required checks match by name across workflows and the fastest one would satisfy the ruleset.
+  check:
     if: always()
-    needs: [changes, verify, e2e, docker]
+    needs: [changes, verify, e2e, docker, actionlint, renovate-config, zizmor]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
