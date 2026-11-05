@@ -134,8 +134,10 @@ jobs:
       - if: failure()
         run: docker logs mahlzeit || true
 
-  # The required check in the ruleset: green when every area job passed or was skipped
-  check:
+  # Required check `ci` in the ruleset. Its name must stay unique across workflows: a second job
+  # called `check` (lint.yml had one) satisfied the ruleset before the area jobs finished.
+  # Green when every area job passed or was skipped; if: always() so a failure cannot hide.
+  ci:
     if: always()
     needs: [changes, verify, e2e, docker]
     runs-on: ubuntu-latest
