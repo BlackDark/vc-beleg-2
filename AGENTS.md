@@ -50,3 +50,17 @@ Same PR, only what the change touches:
 - `sudo`, system packages, global installs: the user runs them; ask with what and why.
 - Ask before changes that alter financial results or scope.
 - Language: code, comments, docs, commits in English; UI in German and English; the PDF report stays German.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`BlackDark/vc-beleg-2`), via the `gh` CLI. See [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+Default canonical labels, identity mapping: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See [docs/agents/domain.md](docs/agents/domain.md).
