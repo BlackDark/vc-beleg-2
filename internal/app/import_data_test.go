@@ -106,7 +106,7 @@ func TestImportDataRejectsWholeFileWithEntryErrors(t *testing.T) {
 		t.Errorf("valid entry reported: %+v", got)
 	}
 	// All-or-nothing: the valid first entry was not imported.
-	list, err := a.ListReceipts(ctx, u, "", "", false)
+	list, err := a.ListReceipts(ctx, u, ReceiptFilter{})
 	if err != nil || len(list) != 0 {
 		t.Fatalf("receipts = %v %v", list, err)
 	}

@@ -436,7 +436,22 @@ export const zListReceiptsQuery = z.object({
         'pending',
         'checked',
         ''
-    ]).optional()
+    ]).optional(),
+    reading: z.enum([
+        'done',
+        'failed',
+        'off',
+        'active',
+        ''
+    ]).optional(),
+    source: z.enum([
+        'upload',
+        'mail',
+        'folder',
+        'data',
+        ''
+    ]).optional(),
+    warnings: z.boolean().optional()
 });
 
 /**

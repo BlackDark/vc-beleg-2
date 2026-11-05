@@ -15,6 +15,10 @@ type receiptListQuery struct {
 	Month   string `query:"month" pattern:"^([0-9]{4}-[0-9]{2})?$" doc:"YYYY-MM; only receipts dated in that month"`
 	Undated bool   `query:"undated" doc:"only receipts without a date, of any month; month is ignored"`
 	Status  string `query:"status" enum:"pending,checked,"`
+	// Reading is the receipt's extraction state; "active" means queued or processing.
+	Reading  string `query:"reading" enum:"done,failed,off,active," doc:"reading status; active = queued or processing"`
+	Source   string `query:"source" enum:"upload,mail,folder,data,"`
+	Warnings bool   `query:"warnings" doc:"only receipts with at least one warning"`
 }
 
 type uploadIn struct {
@@ -42,7 +46,7 @@ func (s *Server) registerReceipts(api huma.API) {
 	tags := []string{"receipts"}
 	authed(s, api, huma.Operation{OperationID: "listReceipts", Method: http.MethodGet, Path: "/api/receipts", Tags: tags},
 		func(ctx context.Context, u *app.User, in *receiptListQuery) (*body[[]*app.Receipt], error) {
-			return wrap(s.app.ListReceipts(ctx, u, in.Month, in.Status, in.Undated))
+			return wrap(s.app.ListReceipts(ctx, u, app.ReceiptFilter{Month: in.Month, Undated: in.Undated, Status: in.Status, Extraction: in.Reading, Source: in.Source, Warnings: in.Warnings}))
 		})
 	authed(s, api, huma.Operation{OperationID: "uploadReceipt", Method: http.MethodPost, Path: "/api/receipts", Tags: tags, DefaultStatus: 201, MaxBodyBytes: 26 << 20,
 		Summary: "Upload a receipt (JPEG, PNG or PDF); it starts as pending"},

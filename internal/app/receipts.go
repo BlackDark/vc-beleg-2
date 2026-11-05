@@ -329,20 +329,53 @@ func (a *App) GetReceipt(ctx context.Context, u *User, id int64) (*Receipt, erro
 	return list[0], nil
 }
 
-// ListReceipts lists receipts dated in month (YYYY-MM, "" for all),
-// optionally by status. With undated it lists the receipts without a date
-// of any month instead and ignores month.
-func (a *App) ListReceipts(ctx context.Context, u *User, month, status string, undated bool) ([]*Receipt, error) {
+// ReceiptFilter narrows ListReceipts; every set field must match (AND).
+type ReceiptFilter struct {
+	Month      string // YYYY-MM; only receipts dated in that month
+	Undated    bool   // only receipts without a date, of any month; Month is ignored
+	Status     string // pending or checked
+	Extraction string // off, done, failed, or active (queued or processing)
+	Source     string // upload, mail or folder
+	Warnings   bool   // only receipts with at least one warning
+}
+
+// ListReceipts lists the receipts matching the filter. Reading status and
+// warnings are derived values, so they are matched after loading.
+func (a *App) ListReceipts(ctx context.Context, u *User, f ReceiptFilter) ([]*Receipt, error) {
 	where, args := "1 = 1", []any{}
-	if undated {
+	if f.Undated {
 		where = "r.date IS NULL"
-	} else if month != "" {
-		where, args = "r.date LIKE ?", append(args, month+"-%")
+	} else if f.Month != "" {
+		where, args = "r.date LIKE ?", append(args, f.Month+"-%")
 	}
-	if status != "" {
-		where, args = where+" AND r.status = ?", append(args, status)
+	if f.Status != "" {
+		where, args = where+" AND r.status = ?", append(args, f.Status)
 	}
-	return a.loadReceipts(ctx, u.EmployeeID, where, args...)
+	if f.Source != "" {
+		where, args = where+" AND r.source = ?", append(args, f.Source)
+	}
+	list, err := a.loadReceipts(ctx, u.EmployeeID, where, args...)
+	if err != nil || (f.Extraction == "" && !f.Warnings) {
+		return list, err
+	}
+	out := list[:0]
+	for _, r := range list {
+		if f.Extraction != "" && !extractionMatches(r.Extraction, f.Extraction) {
+			continue
+		}
+		if f.Warnings && len(r.Warnings) == 0 {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out, nil
+}
+
+func extractionMatches(state, want string) bool {
+	if want == "active" {
+		return state == "queued" || state == "processing"
+	}
+	return state == want
 }
 
 func (a *App) loadReceipts(ctx context.Context, employeeID int64, where string, args ...any) ([]*Receipt, error) {

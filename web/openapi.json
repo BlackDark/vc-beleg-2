@@ -1892,6 +1892,48 @@
               ],
               "type": "string"
             }
+          },
+          {
+            "description": "reading status; active = queued or processing",
+            "explode": false,
+            "in": "query",
+            "name": "reading",
+            "schema": {
+              "description": "reading status; active = queued or processing",
+              "enum": [
+                "done",
+                "failed",
+                "off",
+                "active",
+                ""
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "enum": [
+                "upload",
+                "mail",
+                "folder",
+                "data",
+                ""
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "only receipts with at least one warning",
+            "explode": false,
+            "in": "query",
+            "name": "warnings",
+            "schema": {
+              "description": "only receipts with at least one warning",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
