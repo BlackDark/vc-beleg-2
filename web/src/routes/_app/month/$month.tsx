@@ -91,6 +91,13 @@ function MonthView({ month: mo }: { month: Month }) {
           </Link>
         </Alert>
       ) : null}
+      {mo.undated > 0 ? (
+        <Alert variant="warning" title={m.month_undated({ count: String(mo.undated) })}>
+          <Link to="/receipts" search={{ status: "undated" }} className="text-primary underline">
+            {m.month_undated_link()}
+          </Link>
+        </Alert>
+      ) : null}
       {blockers.map((b) => (
         <Alert key={b} variant="warning">
           {warningText(b)}

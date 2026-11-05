@@ -18,13 +18,13 @@ import { currentMonth, formatWeekday } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
-type Status = "" | "pending" | "checked";
+type Status = "" | "pending" | "checked" | "undated";
 type Search = { month?: string; status?: Status };
 
 export const Route = createFileRoute("/_app/receipts/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     month: typeof s.month === "string" && /^\d{4}-\d{2}$/.test(s.month) ? s.month : undefined,
-    status: s.status === "pending" || s.status === "checked" ? s.status : undefined,
+    status: s.status === "pending" || s.status === "checked" || s.status === "undated" ? s.status : undefined,
   }),
   component: Receipts,
 });
@@ -33,6 +33,7 @@ const filters: { value: Status; label: () => string }[] = [
   { value: "", label: m.filter_all },
   { value: "pending", label: m.receipt_status_pending },
   { value: "checked", label: m.receipt_status_checked },
+  { value: "undated", label: m.filter_undated },
 ];
 
 function Receipts() {
@@ -41,7 +42,7 @@ function Receipts() {
   const status = search.status ?? "";
   const navigate = useNavigate({ from: Route.fullPath });
   const q = useQuery({
-    ...listReceiptsOptions({ query: { month, status } }),
+    ...listReceiptsOptions({ query: status === "undated" ? { undated: true } : { month, status } }),
     refetchInterval: (q) => (q.state.data?.some((r) => isExtractionActive(r.extraction)) ? 2000 : false),
   });
   const receipts = q.data ?? [];
@@ -50,10 +51,14 @@ function Receipts() {
     <>
       <PageHeader title={m.nav_receipts()} actions={<ReceiptCapture variant="outline" />} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <MonthSwitcher
-          month={month}
-          onChange={(mo) => navigate({ search: { month: mo, status: search.status } })}
-        />
+        {status === "undated" ? (
+          <p className="text-sm text-muted-foreground">{m.undated_hint()}</p>
+        ) : (
+          <MonthSwitcher
+            month={month}
+            onChange={(mo) => navigate({ search: { month: mo, status: search.status } })}
+          />
+        )}
         <fieldset className="flex rounded-lg border p-0.5">
           <legend className="sr-only">{m.filter_status()}</legend>
           {filters.map((f) => (
@@ -75,7 +80,11 @@ function Receipts() {
       {q.isPending ? (
         <Skeleton className="h-40" />
       ) : receipts.length === 0 ? (
-        <EmptyState icon={ReceiptIcon} title={m.receipts_empty()} text={m.receipts_empty_text()} />
+        <EmptyState
+          icon={ReceiptIcon}
+          title={m.receipts_empty()}
+          text={status === "undated" ? m.receipts_empty_undated_text() : m.receipts_empty_text()}
+        />
       ) : (
         <Card
           // Bounded so header, month switcher and filter stay in view; focusable for keyboard scrolling.

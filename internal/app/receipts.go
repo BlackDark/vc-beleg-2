@@ -328,12 +328,15 @@ func (a *App) GetReceipt(ctx context.Context, u *User, id int64) (*Receipt, erro
 	return list[0], nil
 }
 
-// ListReceipts lists receipts dated in month (YYYY-MM, "" for all) plus
-// undated ones, optionally by status.
-func (a *App) ListReceipts(ctx context.Context, u *User, month, status string) ([]*Receipt, error) {
+// ListReceipts lists receipts dated in month (YYYY-MM, "" for all),
+// optionally by status. With undated it lists the receipts without a date
+// of any month instead and ignores month.
+func (a *App) ListReceipts(ctx context.Context, u *User, month, status string, undated bool) ([]*Receipt, error) {
 	where, args := "1 = 1", []any{}
-	if month != "" {
-		where, args = "(r.date LIKE ? OR r.date IS NULL)", append(args, month+"-%")
+	if undated {
+		where = "r.date IS NULL"
+	} else if month != "" {
+		where, args = "r.date LIKE ?", append(args, month+"-%")
 	}
 	if status != "" {
 		where, args = where+" AND r.status = ?", append(args, status)

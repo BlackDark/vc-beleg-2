@@ -808,9 +808,13 @@ export type ListReceiptsData = {
     path?: never;
     query?: {
         /**
-         * YYYY-MM; undated receipts are always included
+         * YYYY-MM; only receipts dated in that month
          */
         month?: string;
+        /**
+         * only receipts without a date, of any month; month is ignored
+         */
+        undated?: boolean;
         status?: 'pending' | 'checked' | '';
     };
     url: '/api/receipts';
