@@ -43,6 +43,7 @@ type ErrorModel struct {
 	Code    string              `json:"code"`
 	Message string              `json:"message"`
 	Params  map[string]string   `json:"params,omitempty"`
+	Entries []app.EntryError    `json:"entries,omitempty" doc:"entries of an uploaded data file that were rejected"`
 	Errors  []*huma.ErrorDetail `json:"errors,omitempty"`
 }
 
@@ -82,7 +83,7 @@ func init() {
 func (s *Server) fail(ctx context.Context, err error) error {
 	var ae *app.Error
 	if errors.As(err, &ae) {
-		return &ErrorModel{Status: ae.Status, Code: ae.Code, Message: ae.Message, Params: ae.Params}
+		return &ErrorModel{Status: ae.Status, Code: ae.Code, Message: ae.Message, Params: ae.Params, Entries: ae.Entries}
 	}
 	s.log.ErrorContext(ctx, "request failed", "err", err)
 	return &ErrorModel{Status: 500, Code: "internal", Message: "internal error"}

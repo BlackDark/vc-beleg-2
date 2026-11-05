@@ -147,7 +147,11 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
             />
             <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-xs">
               <ExternalLinkIcon className="size-3" />
-              {r.pages > 1 ? m.open_original_pages({ pages: String(r.pages) }) : m.open_original()}
+              {r.source === "data"
+                ? m.open_data_record()
+                : r.pages > 1
+                  ? m.open_original_pages({ pages: String(r.pages) })
+                  : m.open_original()}
             </span>
           </a>
         </Card>
@@ -225,6 +229,8 @@ function ReceiptForm({ receipt: r }: { receipt: Receipt }) {
                 <p className="text-xs text-muted-foreground">{m.received_by_mail({ from: r.mailFrom })}</p>
               ) : r.source === "folder" ? (
                 <p className="text-xs text-muted-foreground">{m.received_from_folder()}</p>
+              ) : r.source === "data" ? (
+                <p className="text-xs text-muted-foreground">{m.received_from_data()}</p>
               ) : null}
               {r.status === "pending" ? (
                 <div className="grid gap-2">

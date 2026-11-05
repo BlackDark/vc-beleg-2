@@ -122,6 +122,39 @@
         ],
         "type": "object"
       },
+      "EntryError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "error code, for translation",
+            "type": "string"
+          },
+          "field": {
+            "description": "date, total, merchant, extra, or empty for the entry as a whole",
+            "type": "string"
+          },
+          "index": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "index",
+          "field",
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
       "ErrorDetail": {
         "additionalProperties": false,
         "properties": {
@@ -144,6 +177,13 @@
         "properties": {
           "code": {
             "type": "string"
+          },
+          "entries": {
+            "description": "entries of an uploaded data file that were rejected",
+            "items": {
+              "$ref": "#/components/schemas/EntryError"
+            },
+            "type": "array"
           },
           "errors": {
             "items": {
@@ -618,7 +658,8 @@
             "enum": [
               "upload",
               "mail",
-              "folder"
+              "folder",
+              "data"
             ],
             "type": "string"
           },
@@ -1949,6 +1990,77 @@
           }
         ],
         "summary": "Upload a receipt (JPEG, PNG or PDF); it starts as pending",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/api/receipts/data": {
+      "post": {
+        "operationId": "uploadReceiptData",
+        "parameters": [
+          {
+            "explode": false,
+            "in": "query",
+            "name": "filename",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "note",
+            "schema": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "contentMediaType": "application/octet-stream",
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Receipt"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Upload a JSON data file (one receipt object or an array); all-or-nothing, entries start as pending data receipts",
         "tags": [
           "receipts"
         ]

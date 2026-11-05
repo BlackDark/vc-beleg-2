@@ -49,6 +49,11 @@ func (s *Server) registerReceipts(api huma.API) {
 		func(ctx context.Context, u *app.User, in *uploadIn) (*body[*app.Receipt], error) {
 			return wrap(s.app.Import(ctx, u, "upload", in.Filename, in.RawBody, in.Note, nil))
 		})
+	authed(s, api, huma.Operation{OperationID: "uploadReceiptData", Method: http.MethodPost, Path: "/api/receipts/data", Tags: tags, DefaultStatus: 201, MaxBodyBytes: 26 << 20,
+		Summary: "Upload a JSON data file (one receipt object or an array); all-or-nothing, entries start as pending data receipts"},
+		func(ctx context.Context, u *app.User, in *uploadIn) (*body[[]*app.Receipt], error) {
+			return wrap(s.app.ImportData(ctx, u, in.Filename, in.RawBody))
+		})
 	authed(s, api, huma.Operation{OperationID: "getReceipt", Method: http.MethodGet, Path: "/api/receipts/{id}", Tags: tags},
 		func(ctx context.Context, u *app.User, in *idIn) (*body[*app.Receipt], error) {
 			return wrap(s.app.GetReceipt(ctx, u, in.ID))

@@ -21,6 +21,9 @@ _Avoid_: User (that is the login identity, not the domain person)
 Evidence of one meal purchase, imported by upload, mail or folder, with date, total and merchant.
 _Avoid_: Bon, document, invoice
 
+**Data receipt** (Datenbeleg):
+A Receipt created from a JSON data file (one object or an array) instead of a photo or PDF. The normalized JSON record (Unicode NFC, canonical numbers, sorted keys) is its original: it is checksummed for duplicate detection and printed as a rendered page in previews and the report appendix. It is not read automatically and stays `zu prüfen` until the employee checks it.
+
 **Receipt status** (Status):
 `zu prüfen` after import, `geprüft` after the employee confirmed date, total and merchant. Only checked receipts count.
 _Avoid_: approved, valid

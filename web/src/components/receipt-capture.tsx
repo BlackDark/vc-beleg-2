@@ -3,19 +3,33 @@ import { useNavigate } from "@tanstack/react-router";
 import { CameraIcon, Loader2Icon } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
-import { uploadReceipt } from "@/api/gen/sdk.gen";
+import { uploadReceipt, uploadReceiptData } from "@/api/gen/sdk.gen";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
-/** Uploads files as receipts to check; returns the created receipts. */
+const isDataFile = (f: File) => f.type === "application/json" || f.name.toLowerCase().endsWith(".json");
+
+/**
+ * Uploads files as receipts to check; returns the created receipts. A JSON
+ * data file creates one receipt per entry, all-or-nothing.
+ */
 export function useUploadReceipts() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (files: File[]) => {
       const results = [];
       for (const file of files) {
+        if (isDataFile(file)) {
+          const { data } = await uploadReceiptData({
+            query: { filename: file.name },
+            body: file,
+            throwOnError: true,
+          });
+          results.push(...data);
+          continue;
+        }
         const { data } = await uploadReceipt({
           query: { filename: file.name },
           body: file,
@@ -30,7 +44,7 @@ export function useUploadReceipts() {
       qc.invalidateQueries({ queryKey: [{ _id: "getMonth" }] });
       toast.success(m.receipt_uploaded({ count: String(r.length) }));
     },
-    onError: (err) => toast.error(errorText(err)),
+    onError: (err) => toast.error(errorText(err), { style: { whiteSpace: "pre-line" } }),
   });
 }
 
@@ -66,7 +80,7 @@ export function ReceiptCapture({
       <input
         ref={input}
         type="file"
-        accept="image/jpeg,image/png,application/pdf"
+        accept="image/jpeg,image/png,application/pdf,application/json,.json"
         multiple
         className="sr-only"
         tabIndex={-1}
