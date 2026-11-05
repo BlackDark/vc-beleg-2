@@ -421,6 +421,7 @@ export const zGetReaderStatusResponse = zReaderInfo;
 
 export const zListReceiptsQuery = z.object({
     month: z.string().regex(/^([0-9]{4}-[0-9]{2})?$/).optional(),
+    undated: z.boolean().optional(),
     status: z.enum([
         'pending',
         'checked',

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { receiptPng } from "./helpers";
 
 // Runs after the desktop flow, so the account and a closed month exist.
 test("every screen fits 360 px without horizontal scrolling", async ({ page }) => {
@@ -7,10 +8,21 @@ test("every screen fits 360 px without horizontal scrolling", async ({ page }) =
   await page.fill("#password", "a-long-password");
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/$/);
+  // An undated receipt row must fit too, not just the empty state.
+  await page
+    .getByTestId("receipt-input")
+    .first()
+    .setInputFiles({
+      name: "mobile-undated-with-a-rather-long-file-name.png",
+      mimeType: "image/png",
+      buffer: receiptPng(91),
+    });
+  await expect(page).toHaveURL(/\/receipts\/\d+/);
   // Each screen proves it rendered before its width is measured.
   const screens: [string, RegExp][] = [
     ["/", /Dein Essenszuschuss in diesem Monat/],
     ["/receipts", /Keine Belege|zu prüfen|geprüft/],
+    ["/receipts?status=undated", /mobile-undated-with-a-rather-long-file-name/],
     ["/month", /Zusammenfassung/],
     ["/reports", /Monatsberichte zum Archivieren/],
     ["/settings", /Firma und Versteuerung/],

@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -188,7 +189,7 @@ func TestReceiptRules(t *testing.T) {
 	if _, err := a.Import(ctx, u, "upload", "x.txt", []byte("hello"), "", nil); err == nil {
 		t.Fatal("accepted a text file")
 	}
-	got := must(a.ListReceipts(ctx, u, "2026-10", "checked"))
+	got := must(a.ListReceipts(ctx, u, "2026-10", "checked", false))
 	if len(got) != 1 || got[0].Number != "B-2026-0001" {
 		t.Fatalf("list = %+v", got)
 	}
@@ -224,4 +225,56 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// Undated receipts are listed only under "undated"; the month's pending count
+// and close blockers do not depend on how receipts are listed.
+func TestUndatedReceiptListingLeavesMonthUnchanged(t *testing.T) {
+	ctx := context.Background()
+	a, u := newTestApp(t, nil)
+	undated := must(a.Import(ctx, u, "upload", "undated.png", receiptImage(150), "", nil))
+	dated := must(a.Import(ctx, u, "upload", "dated.png", receiptImage(151), "", nil))
+	must(a.UpdateReceipt(ctx, u, dated.ID, ReceiptInput{Date: "2026-10-05", Total: 900}))
+
+	before := must(a.GetMonth(ctx, u, "2026-10"))
+	other := must(a.GetMonth(ctx, u, "2026-09"))
+
+	ids := func(list []*Receipt) []int64 {
+		out := []int64{}
+		for _, r := range list {
+			out = append(out, r.ID)
+		}
+		return out
+	}
+	for _, c := range []struct {
+		name, month, status string
+		undated             bool
+		want                []int64
+	}{
+		{"month", "2026-10", "", false, []int64{dated.ID}},
+		{"other month", "2026-09", "", false, []int64{}},
+		{"month pending", "2026-10", "pending", false, []int64{dated.ID}},
+		{"month checked", "2026-10", "checked", false, []int64{}},
+		{"undated ignores month", "2026-09", "", true, []int64{undated.ID}},
+		{"undated pending", "", "pending", true, []int64{undated.ID}},
+		{"undated checked", "", "checked", true, []int64{}},
+		{"all", "", "", false, []int64{undated.ID, dated.ID}},
+	} {
+		if got := ids(must(a.ListReceipts(ctx, u, c.month, c.status, c.undated))); !slices.Equal(got, c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	after := must(a.GetMonth(ctx, u, "2026-10"))
+	if after.Pending != before.Pending || after.Undated != 1 || !slices.Equal(after.Blockers, before.Blockers) {
+		t.Fatalf("month changed: before %+v after %+v", before, after)
+	}
+	// Pins today's behaviour: an undated pending receipt is counted as undated,
+	// not as pending, and does not add the pending_receipts blocker by itself.
+	if other.Pending != 0 || other.Undated != 1 || contains(other.Blockers, "pending_receipts") {
+		t.Fatalf("other month: %+v", other)
+	}
+	if before.Pending != 1 || !contains(before.Blockers, "pending_receipts") {
+		t.Fatalf("dated pending must block: %+v", before)
+	}
 }

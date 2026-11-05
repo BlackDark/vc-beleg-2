@@ -1819,14 +1819,24 @@
         "operationId": "listReceipts",
         "parameters": [
           {
-            "description": "YYYY-MM; undated receipts are always included",
+            "description": "YYYY-MM; only receipts dated in that month",
             "explode": false,
             "in": "query",
             "name": "month",
             "schema": {
-              "description": "YYYY-MM; undated receipts are always included",
+              "description": "YYYY-MM; only receipts dated in that month",
               "pattern": "^([0-9]{4}-[0-9]{2})?$",
               "type": "string"
+            }
+          },
+          {
+            "description": "only receipts without a date, of any month; month is ignored",
+            "explode": false,
+            "in": "query",
+            "name": "undated",
+            "schema": {
+              "description": "only receipts without a date, of any month; month is ignored",
+              "type": "boolean"
             }
           },
           {
