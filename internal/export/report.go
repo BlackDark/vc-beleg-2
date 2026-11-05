@@ -16,7 +16,7 @@ import (
 	"github.com/blackdark/vc-beleg-2/internal/money"
 )
 
-//go:embed templates/month.typ
+//go:embed templates/*.typ
 var templates embed.FS
 
 //go:embed fonts/*.ttf
@@ -42,6 +42,10 @@ func ExtractFonts(dir string) error {
 	}
 	return nil
 }
+
+// DataMime is the type of the stored original of a data receipt: the
+// canonical JSON record.
+const DataMime = "application/json"
 
 // Snapshot freezes everything a closed month's report shows.
 type Snapshot struct {
@@ -93,9 +97,13 @@ func RenderMonth(ctx context.Context, t *Typst, s Snapshot, files map[int64][]by
 		if !r.Appended || !ok {
 			continue
 		}
-		if r.Mime == "application/pdf" {
+		switch r.Mime {
+		case "application/pdf":
 			r.File = fmt.Sprintf("r%d.pdf", r.ID)
-		} else {
+		case DataMime:
+			// A data receipt is rendered by the template from its record.
+			r.File = fmt.Sprintf("r%d.json", r.ID)
+		default:
 			// Re-rendered images carry no EXIF data (GPS positions).
 			if data, err = t.reportImage(ctx, data, extOf(r.Mime)); err != nil {
 				return nil, fmt.Errorf("receipt %s: %w", r.Number, err)
@@ -113,12 +121,14 @@ func RenderMonth(ctx context.Context, t *Typst, s Snapshot, files map[int64][]by
 	if err := os.WriteFile(filepath.Join(dir, "data.json"), b, 0o600); err != nil {
 		return nil, err
 	}
-	tpl, err := templates.ReadFile("templates/month.typ")
-	if err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(filepath.Join(dir, "main.typ"), tpl, 0o600); err != nil {
-		return nil, err
+	for name, target := range map[string]string{"month.typ": "main.typ", "datareceipt.typ": "datareceipt.typ"} {
+		tpl, err := templates.ReadFile("templates/" + name)
+		if err != nil {
+			return nil, err
+		}
+		if err := os.WriteFile(filepath.Join(dir, target), tpl, 0o600); err != nil {
+			return nil, err
+		}
 	}
 	out := filepath.Join(dir, "out.pdf")
 	if err := t.Compile(ctx, dir, "main.typ", out, "pdf", 0); err != nil {

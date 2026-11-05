@@ -12,15 +12,34 @@ export type ApiError = {
   message?: string;
   params?: Record<string, string>;
   errors?: { message?: string; location?: string }[];
+  entries?: {
+    index: number;
+    field: string;
+    code: string;
+    message: string;
+    params?: Record<string, string>;
+  }[];
 };
 
 type MessageFn = (params?: Record<string, string>) => string;
 const messages = m as unknown as Record<string, MessageFn | undefined>;
 
+const MAX_ENTRY_LINES = 6;
+
 /** Translates an API error code into the UI language. */
 export function errorText(err: unknown): string {
   const e = (err ?? {}) as ApiError;
   const fn = e.code ? messages[`err_${e.code.replace(/[.-]/g, "_")}`] : undefined;
+  if (fn && e.entries?.length) {
+    // A rejected data file: the reason per entry, one line each.
+    const shown = e.entries.slice(0, MAX_ENTRY_LINES).map((x) => {
+      const text =
+        messages[`err_${x.code.replace(/[.-]/g, "_")}`]?.({ field: x.field, ...x.params }) ?? x.message;
+      return m.data_entry({ n: String(x.index + 1), text });
+    });
+    const more = e.entries.length - shown.length;
+    return [fn(e.params ?? {}), ...shown, ...(more > 0 ? [`… +${more}`] : [])].join("\n");
+  }
   if (fn) return fn(e.params ?? {});
   if (e.code === "validation" && e.errors?.length) {
     return `${m.err_validation()} (${e.errors.map((x) => x.location?.replace(/^body\./, "") ?? x.message).join(", ")})`;

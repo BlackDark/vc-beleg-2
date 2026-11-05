@@ -29,6 +29,14 @@ export const zDay = z.object({
     warnings: z.array(z.string())
 });
 
+export const zEntryError = z.object({
+    code: z.string(),
+    field: z.string(),
+    index: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    message: z.string(),
+    params: z.record(z.string(), z.string()).optional()
+});
+
 export const zErrorDetail = z.object({
     location: z.string().optional(),
     message: z.string().optional(),
@@ -37,6 +45,7 @@ export const zErrorDetail = z.object({
 
 export const zErrorModel = z.object({
     code: z.string(),
+    entries: z.array(zEntryError).optional(),
     errors: z.array(zErrorDetail).optional(),
     message: z.string(),
     params: z.record(z.string(), z.string()).optional(),
@@ -153,7 +162,8 @@ export const zReceipt = z.object({
     source: z.enum([
         'upload',
         'mail',
-        'folder'
+        'folder',
+        'data'
     ]),
     status: z.enum(['pending', 'checked']),
     total: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
@@ -445,6 +455,18 @@ export const zUploadReceiptQuery = z.object({
  * Created
  */
 export const zUploadReceiptResponse = zReceipt;
+
+export const zUploadReceiptDataBody = z.string();
+
+export const zUploadReceiptDataQuery = z.object({
+    filename: z.string().max(255).optional(),
+    note: z.string().max(500).optional()
+});
+
+/**
+ * Created
+ */
+export const zUploadReceiptDataResponse = z.array(zReceipt);
 
 export const zDeleteReceiptPath = z.object({
     id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })

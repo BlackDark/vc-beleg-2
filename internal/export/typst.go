@@ -112,3 +112,28 @@ func (t *Typst) Preview(ctx context.Context, file []byte, ext string, widthPt in
 	}
 	return os.ReadFile(out)
 }
+
+// DataReceiptPreview renders the data receipt page of a canonical record as
+// a PNG of the given width in points.
+func (t *Typst) DataReceiptPreview(ctx context.Context, record []byte, widthPt int) ([]byte, error) {
+	dir, err := os.MkdirTemp("", "preview-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(dir)
+	tpl, err := templates.ReadFile("templates/datareceipt.typ")
+	if err != nil {
+		return nil, err
+	}
+	src := fmt.Sprintf("#import \"datareceipt.typ\": data-receipt\n#set page(width: %dpt, height: auto, margin: 10pt)\n#set text(font: \"Inter\", lang: \"de\")\n#data-receipt(json(\"in.json\"))\n", widthPt)
+	for name, content := range map[string][]byte{"datareceipt.typ": tpl, "in.json": record, "main.typ": []byte(src)} {
+		if err := os.WriteFile(filepath.Join(dir, name), content, 0o600); err != nil {
+			return nil, err
+		}
+	}
+	out := filepath.Join(dir, "out.png")
+	if err := t.Compile(ctx, dir, "main.typ", out, "png", 96); err != nil {
+		return nil, err
+	}
+	return os.ReadFile(out)
+}

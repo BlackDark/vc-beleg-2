@@ -30,7 +30,7 @@ type Extraction struct {
 type Receipt struct {
 	ID         int64       `json:"id"`
 	Status     string      `json:"status" enum:"pending,checked"`
-	Source     string      `json:"source" enum:"upload,mail,folder"`
+	Source     string      `json:"source" enum:"upload,mail,folder,data"`
 	Number     string      `json:"number"`
 	Archived   bool        `json:"archived" doc:"included in an archived report, including previous versions"`
 	Filename   string      `json:"filename"`
@@ -74,7 +74,8 @@ func detect(b []byte) (string, string, bool) {
 	return "", "", false
 }
 
-// Import stores an original receipt file as pending and queues extraction.
+// Import stores an original receipt file (image or PDF; JSON data goes
+// through ImportData) as pending and queues extraction.
 func (a *App) Import(ctx context.Context, u *User, source, filename string, data []byte, note string, mail *MailMeta) (*Receipt, error) {
 	r, err := a.importFile(ctx, u, source, filename, data, note, mail)
 	a.recordImport(ctx, u, source, filename, r, err)

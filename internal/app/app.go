@@ -21,6 +21,7 @@ type Error struct {
 	Code    string            `json:"code"`
 	Message string            `json:"message"`
 	Params  map[string]string `json:"params,omitempty"`
+	Entries []EntryError      `json:"entries,omitempty"`
 }
 
 func (e *Error) Error() string { return e.Code + ": " + e.Message }

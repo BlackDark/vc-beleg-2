@@ -86,7 +86,7 @@ kubectl exec deploy/mahlzeit -- mahlzeit check folder        # what the next fol
 kubectl exec deploy/mahlzeit -- mahlzeit check ai /tmp/bon.jpg # read one receipt with the configured provider and model
 ```
 
-Settings → Import-Protokoll lists the last 90 days: every uploaded, mailed or folder file (imported, already there, or rejected with the reason) and every receipt reading (provider, model, duration, fields found, or the error). The server log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
+Settings → Import-Protokoll lists the last 90 days: every uploaded (a JSON data file logs one line per receipt, or one rejection for the whole file), mailed or folder file (imported, already there, or rejected with the reason) and every receipt reading (provider, model, duration, fields found, or the error). The server log names the receipt reader at startup and has one line per import run, per imported receipt and per reading (started, done or failed, with duration and which fields were found, never their values).
 
 ## Receipt reading
 

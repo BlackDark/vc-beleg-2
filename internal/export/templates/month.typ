@@ -1,5 +1,6 @@
 // Monthly meal allowance report. Data comes from data.json (the frozen
 // snapshot); user content is only ever passed as data.
+#import "datareceipt.typ": data-receipt
 #let s = json("data.json")
 #let r = s.result
 #let t = r.totals
@@ -243,6 +244,10 @@
     ]
     // Photos of till receipts are narrow; a full-width page would blow them up.
     let width = if x.mime == "application/pdf" { 100% } else { 110mm }
+    if x.mime == "application/json" {
+      align(center, data-receipt(json(x.file), width: 110mm))
+      continue
+    }
     align(center, block(height: 1fr, width: width, if x.mime == "application/pdf" {
       image(x.file, page: p, width: 100%, height: 100%, fit: "contain")
     } else {

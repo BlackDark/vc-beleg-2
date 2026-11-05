@@ -46,6 +46,22 @@ export type Day = {
     warnings: Array<string>;
 };
 
+export type EntryError = {
+    /**
+     * error code, for translation
+     */
+    code: string;
+    /**
+     * date, total, merchant, extra, or empty for the entry as a whole
+     */
+    field: string;
+    index: number;
+    message: string;
+    params?: {
+        [key: string]: string;
+    };
+};
+
 export type ErrorDetail = {
     /**
      * Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'
@@ -63,6 +79,10 @@ export type ErrorDetail = {
 
 export type ErrorModel = {
     code: string;
+    /**
+     * entries of an uploaded data file that were rejected
+     */
+    entries?: Array<EntryError>;
     errors?: Array<ErrorDetail>;
     message: string;
     params?: {
@@ -227,7 +247,7 @@ export type Receipt = {
     note: string;
     number: string;
     pages: number;
-    source: 'upload' | 'mail' | 'folder';
+    source: 'upload' | 'mail' | 'folder' | 'data';
     status: 'pending' | 'checked';
     total: number;
     /**
@@ -865,6 +885,34 @@ export type UploadReceiptResponses = {
 };
 
 export type UploadReceiptResponse = UploadReceiptResponses[keyof UploadReceiptResponses];
+
+export type UploadReceiptDataData = {
+    body: Blob | File;
+    path?: never;
+    query?: {
+        filename?: string;
+        note?: string;
+    };
+    url: '/api/receipts/data';
+};
+
+export type UploadReceiptDataErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type UploadReceiptDataError = UploadReceiptDataErrors[keyof UploadReceiptDataErrors];
+
+export type UploadReceiptDataResponses = {
+    /**
+     * Created
+     */
+    201: Array<Receipt>;
+};
+
+export type UploadReceiptDataResponse = UploadReceiptDataResponses[keyof UploadReceiptDataResponses];
 
 export type DeleteReceiptData = {
     body?: never;
