@@ -52,8 +52,8 @@ jobs:
           advanced-security: false
           annotations: true
 
-  # The one required check in the ruleset (same gate as ci.yml's `check` job)
-  check:
+  # Required check `lint` in the ruleset (the gate for ci.yml is `ci`; names must differ)
+  lint:
     if: always()
     needs: [actionlint, renovate-config, zizmor]
     runs-on: ubuntu-latest
