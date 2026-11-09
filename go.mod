@@ -5,15 +5,15 @@ go 1.27.3
 require (
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/anthropics/anthropic-sdk-go v1.84.0
-	github.com/danielgtaylor/huma/v2 v2.39.1
+	github.com/danielgtaylor/huma/v2 v2.40.0
 	github.com/emersion/go-imap/v2 v2.0.0-beta.8
 	github.com/emersion/go-message v0.18.2
-	github.com/go-jose/go-jose/v4 v4.1.6
+	github.com/go-jose/go-jose/v4 v4.1.9
 	github.com/pressly/goose/v3 v3.29.0
-	github.com/zitadel/oidc/v3 v3.51.16
+	github.com/zitadel/oidc/v3 v3.51.17
 	golang.org/x/net v0.62.0
 	golang.org/x/text v0.43.0
-	modernc.org/sqlite v1.60.1
+	modernc.org/sqlite v1.62.0
 )
 
 require (
@@ -51,7 +51,7 @@ require (
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	modernc.org/libc v1.78.0 // indirect
+	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
