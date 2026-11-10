@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/anthropics/anthropic-sdk-go/v2/option"
 
 	"github.com/blackdark/vc-beleg-2/internal/api"
 	"github.com/blackdark/vc-beleg-2/internal/app"

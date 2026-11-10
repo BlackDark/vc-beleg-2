@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/alexedwards/argon2id v1.0.0
-	github.com/anthropics/anthropic-sdk-go v1.84.0
+	github.com/anthropics/anthropic-sdk-go/v2 v2.9.0
 	github.com/danielgtaylor/huma/v2 v2.40.0
 	github.com/emersion/go-imap/v2 v2.0.0-beta.8
 	github.com/emersion/go-message v0.18.2
