@@ -4,4 +4,4 @@ packages:
 
 # Upstream pins a vulnerable js-yaml version; remove when the parser updates.
 overrides:
-  "@hey-api/json-schema-ref-parser@1.4.4>js-yaml": "4.3.2"
+  "@hey-api/json-schema-ref-parser@1.4.4>js-yaml": "5.5.0"
