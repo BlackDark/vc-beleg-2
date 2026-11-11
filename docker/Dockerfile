@@ -4,7 +4,8 @@
 
 FROM --platform=$BUILDPLATFORM node:26.13.0-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS web
 WORKDIR /src/web
-RUN corepack enable
+# Node 26 images do not ship corepack.
+RUN npm install -g corepack && corepack enable
 COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
 COPY web/tools/codegen/package.json tools/codegen/package.json
 COPY web/project.inlang project.inlang
