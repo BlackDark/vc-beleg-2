@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.1](https://github.com/BlackDark/vc-beleg-2/compare/v0.7.0...v0.7.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **deps:** update go modules (non-major) ([#55](https://github.com/BlackDark/vc-beleg-2/issues/55)) ([bc88f5f](https://github.com/BlackDark/vc-beleg-2/commit/bc88f5f0928d542b4b4e873dc0c1e61239d81593))
+* **deps:** update module github.com/anthropics/anthropic-sdk-go to v2 ([#60](https://github.com/BlackDark/vc-beleg-2/issues/60)) ([d873fa2](https://github.com/BlackDark/vc-beleg-2/commit/d873fa224e146bd7f3343d59df1a95a9161fe5bc))
+
+
+### Refactoring
+
+* **deps:** update dependencies (non-major) ([#56](https://github.com/BlackDark/vc-beleg-2/issues/56)) ([14780fb](https://github.com/BlackDark/vc-beleg-2/commit/14780fbb1d87186d7dd3b835812f0bfff976b2df))
+
 ## [0.7.0](https://github.com/BlackDark/vc-beleg-2/compare/v0.6.0...v0.7.0) (2026-11-05)
 
 
