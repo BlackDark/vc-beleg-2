@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/v2"
 )
 
 const pingPrompt = "Connection test: reply with exactly pong."
